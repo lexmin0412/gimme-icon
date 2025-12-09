@@ -1,0 +1,342 @@
+import type { Icon, SearchResult, FilterOptions } from '../types/icon';
+import { embeddingService } from './embedding';
+import type { IVectorStore } from './vector-stores/IVectorStore';
+import { VectorStoreFactory, type VectorStoreConfig } from './vector-stores/VectorStoreFactory';
+
+// 从静态文件导入图标数据
+import iconsData from '../data/icons.json';
+
+// 检测是否在浏览器环境（客户端）
+const isClient = typeof window !== 'undefined';
+
+class ChromaService {
+  private initialized: boolean = false;
+  private icons: Icon[] = iconsData;
+  private vectorStore: IVectorStore;
+  private vectorStoreConfig: VectorStoreConfig;
+
+  constructor(vectorStoreConfig: VectorStoreConfig = { type: 'memory' }) {
+    this.vectorStoreConfig = vectorStoreConfig;
+    this.vectorStore = VectorStoreFactory.createVectorStore(vectorStoreConfig);
+  }
+
+  async initialize() {
+    if (this.initialized) return;
+
+    try {
+      // 如果是客户端且使用云向量存储，跳过本地初始化，因为实际操作会通过API路由在服务端执行
+      if (isClient && this.vectorStoreConfig.type === 'cloud-chroma') {
+        this.initialized = true;
+        console.log('Cloud vector store initialization skipped on client (will use API routes)');
+        return;
+      }
+
+      // 初始化向量存储，添加超时处理
+      const timeoutMs = 60000; // 60秒超时
+      await Promise.race([
+        this.vectorStore.initialize(),
+        new Promise((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Vector store initialization timed out after ${timeoutMs}ms`));
+          }, timeoutMs);
+        })
+      ]);
+
+      // 只在非降级模式下为图标生成向量
+      if (!embeddingService.isUsingFallback()) {
+        // 检查是否需要生成向量，添加超时处理
+        const vectorCount = await Promise.race([
+          this.vectorStore.getVectorCount(),
+          new Promise((_, reject) => {
+            setTimeout(() => {
+              reject(new Error(`Get vector count timed out after ${timeoutMs}ms`));
+            }, timeoutMs);
+          })
+        ]);
+        
+        if (vectorCount === 0) {
+          console.log('Generating embeddings for all icons...');
+          // 批量生成向量并添加到存储中
+          const vectorItems = [];
+          
+          // 为每个图标生成向量，添加超时处理
+          const generateEmbeddingsPromise = async () => {
+            for (const icon of this.icons) {
+              const document = `${icon.name} ${icon.tags.join(' ')} ${icon.synonyms.join(' ')}`;
+              const embedding = await embeddingService.generateEmbedding(document);
+              
+              vectorItems.push({
+                id: icon.id,
+                embedding: embedding,
+                metadata: {
+                  name: icon.name,
+                  library: icon.library,
+                  category: icon.category,
+                  tags: icon.tags,
+                  synonyms: icon.synonyms
+                }
+              });
+            }
+            return vectorItems;
+          };
+          
+          // 生成向量超时控制
+          const generatedVectorItems = await Promise.race([
+            generateEmbeddingsPromise(),
+            new Promise((_, reject) => {
+              setTimeout(() => {
+                reject(new Error(`Generating embeddings timed out after ${timeoutMs * 2}ms`));
+              }, timeoutMs * 2); // 生成所有向量需要更长时间
+            })
+          ]);
+          
+          // 批量添加向量，添加超时处理
+          await Promise.race([
+            this.vectorStore.addVectors(generatedVectorItems),
+            new Promise((_, reject) => {
+              setTimeout(() => {
+                reject(new Error(`Adding vectors timed out after ${timeoutMs}ms`));
+              }, timeoutMs);
+            })
+          ]);
+          
+          console.log(`Added ${generatedVectorItems.length} vectors to store`);
+        } else {
+          console.log(`Using existing ${vectorCount} vectors from store`);
+        }
+      } else {
+        console.log('Using fallback mode, skipping embedding generation');
+      }
+
+      this.initialized = true;
+      console.log('Vector store initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize vector store:', error);
+      // 确保即使向量存储初始化失败，应用也能继续运行
+      this.initialized = true;
+      // 如果embeddingService还没有处于降级模式，强制切换到降级模式
+      if (!embeddingService.isUsingFallback()) {
+        console.log('Forcing fallback mode due to vector store initialization failure');
+        // 注意：这里我们不能直接设置embeddingService的useFallback属性，因为它是私有属性
+        // 我们可以通过调用generateEmbedding方法来间接触发降级模式
+        // 或者，我们可以在ChromaService中添加一个标志来指示使用降级模式
+        // 由于我们已经在catch块中将initialized设置为true，应用将继续运行，但搜索会使用降级的文本搜索
+      }
+    }
+  }
+
+  async searchIcons(query: string, filters: FilterOptions, limit: number = 20): Promise<SearchResult[]> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    // 如果是客户端且使用云向量存储，通过API路由搜索
+    if (isClient && this.vectorStoreConfig.type === 'cloud-chroma') {
+      try {
+        const response = await fetch('/api/chroma/search', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ query, filters, limit }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          return data.results;
+        } else {
+          console.error('API search failed:', data.error);
+        }
+      } catch (error) {
+        console.error('Failed to call search API:', error);
+      }
+    }
+
+    // 应用过滤器（移到 try 块外面，以便在 catch 中也能使用）
+    const filteredIcons = this.icons.filter(icon => {
+      if (filters.libraries.length > 0 && !filters.libraries.includes(icon.library)) {
+        return false;
+      }
+      if (filters.categories.length > 0 && !filters.categories.includes(icon.category)) {
+        return false;
+      }
+      if (filters.tags.length > 0 && !filters.tags.some(tag => icon.tags.includes(tag))) {
+        return false;
+      }
+      return true;
+    });
+
+    try {
+      // 如果没有查询词，直接返回过滤结果
+      if (!query.trim()) {
+        return filteredIcons.slice(0, limit).map(icon => ({
+          icon,
+          score: 0,
+        }));
+      }
+
+      // 如果处于降级模式，直接使用简单文本搜索
+      if (embeddingService.isUsingFallback()) {
+        console.log('Using fallback text search');
+        return this.simpleTextSearch(query, filters, limit, filteredIcons);
+      }
+
+      // 生成查询向量
+      const queryEmbedding = await embeddingService.generateEmbedding(query);
+      
+      // 再次检查是否在生成查询向量后切换到了降级模式
+      if (embeddingService.isUsingFallback()) {
+        console.log('Switched to fallback mode during query embedding generation');
+        return this.simpleTextSearch(query, filters, limit, filteredIcons);
+      }
+
+      // 构建向量存储的过滤条件
+      const vectorStoreFilters: Record<string, string[] | string> = {};
+      if (filters.libraries.length > 0) {
+        vectorStoreFilters.library = filters.libraries;
+      }
+      if (filters.categories.length > 0) {
+        vectorStoreFilters.category = filters.categories;
+      }
+      // Tags过滤需要特殊处理，因为tags是数组
+
+      // 使用向量存储搜索相似向量
+      const searchResults = await this.vectorStore.searchSimilarVectors(
+        queryEmbedding,
+        limit * 2, // 获取更多结果，因为后续还要过滤
+        vectorStoreFilters
+      );
+
+      // 转换搜索结果，添加完整的图标信息并应用标签过滤
+      const results: SearchResult[] = [];
+      for (const searchResult of searchResults) {
+        const icon = this.icons.find(icon => icon.id === searchResult.id);
+        if (icon) {
+          // 应用标签过滤
+          if (filters.tags.length === 0 || filters.tags.some(tag => icon.tags.includes(tag))) {
+            results.push({
+              icon,
+              score: searchResult.score,
+            });
+          }
+        }
+      }
+
+      // 按分数排序并限制结果数量
+      const sortedResults = results
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+        
+      // 如果没有结果，使用简单文本搜索作为最终降级
+      if (sortedResults.length === 0) {
+        console.log('No vector search results, using fallback text search');
+        return this.simpleTextSearch(query, filters, limit, filteredIcons);
+      }
+
+      return sortedResults;
+    } catch (error) {
+      console.error('Search failed:', error);
+      // 降级为简单的文本匹配搜索
+      return this.simpleTextSearch(query, filters, limit, filteredIcons);
+    }
+  }
+
+  // 简单的文本匹配搜索（用于降级或开发环境）
+  private simpleTextSearch(query: string, filters: FilterOptions, limit: number, filteredIcons?: Icon[]): SearchResult[] {
+    const lowerQuery = query.toLowerCase();
+    
+    // 使用传入的过滤图标，如果没有则先应用过滤
+    const iconsToSearch = filteredIcons || this.icons.filter(icon => {
+      if (filters.libraries.length > 0 && !filters.libraries.includes(icon.library)) {
+        return false;
+      }
+      if (filters.categories.length > 0 && !filters.categories.includes(icon.category)) {
+        return false;
+      }
+      if (filters.tags.length > 0 && !filters.tags.some(tag => icon.tags.includes(tag))) {
+        return false;
+      }
+      return true;
+    });
+    
+    return iconsToSearch
+      .filter(icon => {
+        // 简单文本匹配
+        const searchText = `${icon.name} ${icon.tags.join(' ')} ${icon.synonyms.join(' ')}`.toLowerCase();
+        return searchText.includes(lowerQuery);
+      })
+      .slice(0, limit)
+      .map(icon => ({
+        icon,
+        score: 0,
+      }));
+  }
+
+  // 获取所有可用的过滤选项
+  getFilterOptions(): {
+    libraries: string[];
+    categories: string[];
+    tags: string[];
+  } {
+    const libraries = Array.from(new Set(this.icons.map(icon => icon.library)));
+    const categories = Array.from(new Set(this.icons.map(icon => icon.category)));
+    const tags = Array.from(new Set(this.icons.flatMap(icon => icon.tags)));
+
+    return {
+      libraries,
+      categories,
+      tags,
+    };
+  }
+
+  // 获取当前使用的向量存储
+  getVectorStore(): IVectorStore {
+    return this.vectorStore;
+  }
+
+  // 获取当前向量存储配置
+  getVectorStoreConfig(): VectorStoreConfig {
+    return this.vectorStoreConfig;
+  }
+
+  // 切换向量存储
+  async switchVectorStore(config: VectorStoreConfig): Promise<void> {
+    this.vectorStoreConfig = config;
+    
+    // 如果是客户端且使用云向量存储，通过API路由配置
+    if (isClient && config.type === 'cloud-chroma') {
+      try {
+        const response = await fetch('/api/chroma/config', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(config),
+        });
+        
+        const data = await response.json();
+        if (!data.success) {
+          console.error('Failed to configure cloud vector store:', data.error);
+          // 仍然在客户端创建向量存储实例，但可能无法正常工作
+          this.vectorStore = VectorStoreFactory.createVectorStore(config);
+        } else {
+          // 在客户端创建一个空的向量存储实例，实际操作通过API进行
+          this.vectorStore = VectorStoreFactory.createVectorStore(config);
+        }
+      } catch (error) {
+        console.error('Failed to call config API:', error);
+        // 仍然在客户端创建向量存储实例，但可能无法正常工作
+        this.vectorStore = VectorStoreFactory.createVectorStore(config);
+      }
+    } else {
+      // 本地或内存存储，直接在客户端创建实例
+      this.vectorStore = VectorStoreFactory.createVectorStore(config);
+    }
+    
+    this.initialized = false;
+    await this.initialize();
+  }
+}
+
+// 默认使用内存向量存储
+export const chromaService = new ChromaService();
