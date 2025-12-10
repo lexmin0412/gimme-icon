@@ -8,6 +8,8 @@ import {
   VectorStoreFactory,
   type VectorStoreConfig,
 } from "./vector-stores/VectorStoreFactory";
+import localforage from "localforage";
+import { generateHash } from "../utils/hash";
 
 // 从静态文件导入图标数据
 import iconsData from "@/data/icons.json";
@@ -69,54 +71,93 @@ class ChromaService {
         ]);
 
         if (vectorCount === 0) {
-          console.log("Generating embeddings for all icons...");
-          // 批量生成向量并添加到存储中
-          const vectorItems: VectorStoreItem[] = [];
+          // 生成icons.json内容的哈希值
+          const iconsJsonString = JSON.stringify(iconsData);
+          const iconsHash = generateHash(iconsJsonString);
+          const vectorStoreName = `gimme_icons_${iconsHash}`;
+          let vectorItems: VectorStoreItem[] = [];
 
-          // 为每个图标生成向量，添加超时处理
-          const generateEmbeddingsPromise = async () => {
-            console.time("生成所有图标向量耗时");
-            for (const icon of this.icons) {
-              const document = `${icon.name} ${icon.tags.join(
-                " "
-              )} ${icon.synonyms.join(" ")}`;
-              const embedding = await embeddingService.generateEmbedding(
-                document
-              );
-
-              vectorItems.push({
-                id: icon.id,
-                embedding: embedding,
-                metadata: {
-                  name: icon.name,
-                  library: icon.library,
-                  category: icon.category,
-                  tags: icon.tags,
-                  synonyms: icon.synonyms,
-                },
-              } as VectorStoreItem);
+          // 检查IndexedDB中是否已有向量数据
+          if (isClient) {
+            try {
+              console.log(`Checking IndexedDB for vector store: ${vectorStoreName}`);
+              const storedVectors = await localforage.getItem<VectorStoreItem[]>(vectorStoreName);
+              
+              if (storedVectors && storedVectors.length > 0) {
+                console.log(`Found ${storedVectors.length} vectors in IndexedDB, reusing them`);
+                vectorItems = storedVectors;
+              } else {
+                console.log("No vectors found in IndexedDB, generating new ones");
+              }
+            } catch (error) {
+              console.error("Error accessing IndexedDB:", error);
             }
-            console.timeEnd("生成所有图标向量耗时");
-            return vectorItems;
-          };
+          }
 
-          // 生成向量超时控制
-          const generatedVectorItems = (await Promise.race([
-            generateEmbeddingsPromise(),
-            new Promise((_, reject) => {
-              setTimeout(() => {
-                reject(
-                  new Error(
-                    `Generating embeddings timed out after ${timeoutMs * 2}ms`
-                  )
+          // 如果没有从IndexedDB获取到向量，就生成新的向量
+          if (vectorItems.length === 0) {
+            console.log("Generating embeddings for all icons...");
+            // 批量生成向量并添加到存储中
+            
+            // 为每个图标生成向量，添加超时处理
+            const generateEmbeddingsPromise = async () => {
+              console.time("生成所有图标向量耗时");
+              const items: VectorStoreItem[] = [];
+              for (const icon of this.icons) {
+                const document = `${icon.name} ${icon.tags.join(
+                  " "
+                )} ${icon.synonyms.join(" ")}`;
+                const embedding = await embeddingService.generateEmbedding(
+                  document
                 );
-              }, timeoutMs * 2); // 生成所有向量需要更长时间
-            }),
-          ])) as VectorStoreItem[];
+
+                items.push({
+                  id: icon.id,
+                  embedding: embedding,
+                  metadata: {
+                    name: icon.name,
+                    library: icon.library,
+                    category: icon.category,
+                    tags: icon.tags,
+                    synonyms: icon.synonyms,
+                  },
+                } as VectorStoreItem);
+              }
+              console.timeEnd("生成所有图标向量耗时");
+              return items;
+            };
+
+            // 生成向量超时控制
+            vectorItems = (await Promise.race([
+              generateEmbeddingsPromise(),
+              new Promise((_, reject) => {
+                setTimeout(() => {
+                  reject(
+                    new Error(
+                      `Generating embeddings timed out after ${timeoutMs * 2}ms`
+                    )
+                  );
+                }, timeoutMs * 2); // 生成所有向量需要更长时间
+              }),
+            ])) as VectorStoreItem[];
+
+            console.log('generatedVectorItems', vectorItems);
+
+            // 将生成的向量存储到IndexedDB中
+            if (isClient) {
+              try {
+                console.log(`Storing ${vectorItems.length} vectors in IndexedDB: ${vectorStoreName}`);
+                await localforage.setItem(vectorStoreName, vectorItems);
+                console.log("Vectors stored in IndexedDB successfully");
+              } catch (error) {
+                console.error("Error storing vectors in IndexedDB:", error);
+              }
+            }
+          }
 
           // 批量添加向量，添加超时处理
           await Promise.race([
-            this.vectorStore.addVectors(generatedVectorItems),
+            this.vectorStore.addVectors(vectorItems),
             new Promise((_, reject) => {
               setTimeout(() => {
                 reject(
@@ -126,7 +167,7 @@ class ChromaService {
             }),
           ]);
 
-          console.log(`Added ${generatedVectorItems.length} vectors to store`);
+          console.log(`Added ${vectorItems.length} vectors to store`);
         } else {
           console.log(`Using existing ${vectorCount} vectors from store`);
         }
@@ -156,7 +197,7 @@ class ChromaService {
   async searchIcons(
     query: string,
     filters: FilterOptions,
-    limit: number = 20
+    limit: number = 50
   ): Promise<SearchResult[]> {
     if (!this.initialized) {
       await this.initialize();
@@ -246,7 +287,7 @@ class ChromaService {
       // 使用向量存储搜索相似向量
       const searchResults = await this.vectorStore.searchSimilarVectors(
         queryEmbedding,
-        limit * 2, // 获取更多结果，因为后续还要过滤
+        limit,
         vectorStoreFilters
       );
 

@@ -71,7 +71,9 @@ class EmbeddingService {
         
         // 尝试使用Xenova提供的量化模型版本，这是专门为浏览器优化的
         // 使用Promise.race确保在超时时间内完成
+        console.time('加载模型耗时');
         this.embedder = await Promise.race([pipelinePromise, timeoutPromise]);
+        console.timeEnd('加载模型耗时');
         
         console.log('=== Model Initialization Complete ===');
         console.log('Embedder type:', typeof this.embedder);
