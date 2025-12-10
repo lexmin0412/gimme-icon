@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import type { Icon } from '../../types/icon';
+import { useToast } from './ToastProvider';
 
 interface IconPreviewProps {
   icon: Icon | null;
@@ -9,6 +10,7 @@ interface IconPreviewProps {
 }
 
 const IconPreview: React.FC<IconPreviewProps> = ({ icon, onClose, onTagAdded }) => {
+  const { showToast } = useToast();
   const [newTag, setNewTag] = useState('');
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [tagError, setTagError] = useState('');
@@ -18,18 +20,20 @@ const IconPreview: React.FC<IconPreviewProps> = ({ icon, onClose, onTagAdded }) 
   const handleCopySvg = async () => {
     try {
       await navigator.clipboard.writeText(icon.svg);
-      alert('SVG copied to clipboard!');
+      showToast('SVG copied to clipboard!', 'success');
     } catch (err) {
       console.error('Failed to copy SVG:', err);
+      showToast('Failed to copy SVG', 'error');
     }
   };
 
   const handleCopyName = async () => {
     try {
       await navigator.clipboard.writeText(icon.name);
-      alert('Icon name copied to clipboard!');
+      showToast('Icon name copied to clipboard!', 'success');
     } catch (err) {
       console.error('Failed to copy icon name:', err);
+      showToast('Failed to copy icon name', 'error');
     }
   };
 
@@ -67,7 +71,7 @@ const IconPreview: React.FC<IconPreviewProps> = ({ icon, onClose, onTagAdded }) 
 
       // 重置输入
       setNewTag('');
-      alert('Tag added successfully!');
+      showToast('Tag added successfully!', 'success');
     } catch (error) {
       setTagError(error instanceof Error ? error.message : 'Failed to add tag');
     } finally {

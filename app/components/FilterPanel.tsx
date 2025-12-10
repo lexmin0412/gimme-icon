@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { FilterOptions } from '../../types/icon';
 import { chromaService } from '../../services/chroma';
 import type { VectorStoreConfig } from '../../services/vector-stores/VectorStoreFactory';
+import { useToast } from './ToastProvider';
 
 interface FilterPanelProps {
   filters: FilterOptions;
@@ -19,6 +20,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   availableFilters, 
   onFilterChange 
 }) => {
+  const { showToast } = useToast();
   const [isTagsExpanded, setIsTagsExpanded] = useState(false);
   const [showExpandButton, setShowExpandButton] = useState(false);
   const tagsContainerRef = useRef<HTMLDivElement>(null);
@@ -109,7 +111,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       console.log('Vector store configuration applied successfully');
     } catch (error) {
       console.error('Failed to apply vector store configuration:', error);
-      alert('Failed to apply vector store configuration. Please check the console for details.');
+      showToast('Failed to apply vector store configuration. Please check the console for details.', 'error');
     } finally {
       setIsConfiguring(false);
     }
