@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { startTransition, useState } from 'react';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -15,7 +15,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
-    onSearch(value);
+    startTransition(()=>{
+      onSearch(value);
+    })
   };
 
   const handleSubmit = (e: React.FormEvent) => {
