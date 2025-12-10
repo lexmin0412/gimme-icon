@@ -90,4 +90,22 @@ export class MemoryVectorStore implements IVectorStore {
   async getVectorCount(): Promise<number> {
     return this.vectors.size;
   }
+
+  async updateVector(
+    id: string,
+    newEmbedding: number[],
+    metadata?: Record<string, string[] | string | number>
+  ): Promise<void> {
+    const existingVector = this.vectors.get(id);
+    if (!existingVector) {
+      throw new Error(`Vector with id ${id} not found`);
+    }
+
+    // 更新向量，保留原有metadata（如果没有提供新的metadata）
+    this.vectors.set(id, {
+      id,
+      embedding: newEmbedding,
+      metadata: metadata || existingVector.metadata
+    });
+  }
 }

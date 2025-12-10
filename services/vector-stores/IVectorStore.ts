@@ -70,4 +70,16 @@ export interface IVectorStore {
    * 获取存储中的向量数量
    */
   getVectorCount(): Promise<number>;
+
+  /**
+   * 更新指定ID的向量
+   * @param id 向量ID
+   * @param newEmbedding 新的向量嵌入
+   * @param metadata 可选的更新元数据
+   */
+  updateVector(
+    id: string,
+    newEmbedding: number[],
+    metadata?: Record<string, string[] | string | number>
+  ): Promise<void>;
 }

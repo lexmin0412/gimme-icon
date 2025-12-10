@@ -182,4 +182,13 @@ export class CloudChromaVectorStore implements IVectorStore {
     const count = await this.collection.count();
     return count;
   }
+
+  async updateVector(id: string, newEmbedding: number[], metadata?: Record<string, string[] | string | number>): Promise<void> {
+    // 使用upsert操作更新向量，Cloud ChromaDB的upsert会创建或更新向量
+    await this.collection.upsert({
+      ids: [id],
+      embeddings: [newEmbedding],
+      metadatas: metadata ? [metadata] : undefined
+    });
+  }
 }
