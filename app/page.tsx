@@ -1,50 +1,46 @@
-'use client';
-import React, { useState, useEffect, useContext } from 'react';
-import SearchBar from './components/SearchBar';
-import IconGrid from './components/IconGrid';
-import FilterPanel from './components/FilterPanel';
-import IconPreview from './components/IconPreview';
-import { chromaService } from './services/chroma';
-import type { Icon, SearchResult, FilterOptions } from './types/icon';
-import { SearchProvider, SearchContext } from './context/SearchContext';
-import { embeddingService } from './services/embedding';
+"use client";
+import React, { useState, useEffect, useContext } from "react";
+import SearchBar from "./components/SearchBar";
+import IconGrid from "./components/IconGrid";
+import FilterPanel from "./components/FilterPanel";
+import IconPreview from "./components/IconPreview";
+import { chromaService } from "./services/chroma";
+import type { SearchResult, FilterOptions } from "./types/icon";
+import { SearchProvider, SearchContext } from "./context/SearchContext";
+import { embeddingService } from "./services/embedding";
+import { APP_NAME, APP_DESCRIPTION } from "./constants";
 
 // 创建一个使用SearchContext的内部组件
 const HomeContent: React.FC = () => {
   const context = useContext(SearchContext);
   const [isLoading, setIsLoading] = useState(true);
 
+  const triggerFirstSearch = async () => {
+    // 初始搜索（空查询，返回所有图标）
+    const initialResults = await chromaService.searchIcons(
+      "",
+      context?.filters || { libraries: [], categories: [], tags: [] }
+    );
+    context?.setResults(initialResults);
+  };
+
   // 初始化应用
   useEffect(() => {
-    const initializeApp = async () => {
-      try {
-        // 初始化嵌入服务
-        await embeddingService.initialize();
-        // 初始化向量存储
-        await chromaService.initialize();
-        
-        // 初始搜索（空查询，返回所有图标）
-        const initialResults = await chromaService.searchIcons('', context?.filters || { libraries: [], categories: [], tags: [] });
-        context?.setResults(initialResults);
-      } catch (error) {
-        console.error('Failed to initialize app:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeApp();
-  }, [context]);
+    triggerFirstSearch();
+  }, []);
 
   // 处理搜索查询
   const handleSearch = async (query: string) => {
     context?.setQuery(query);
     try {
       setIsLoading(true);
-      const results = await chromaService.searchIcons(query, context?.filters || { libraries: [], categories: [], tags: [] });
+      const results = await chromaService.searchIcons(
+        query,
+        context?.filters || { libraries: [], categories: [], tags: [] }
+      );
       context?.setResults(results);
     } catch (error) {
-      console.error('Search failed:', error);
+      console.error("Search failed:", error);
     } finally {
       setIsLoading(false);
     }
@@ -56,10 +52,10 @@ const HomeContent: React.FC = () => {
     try {
       setIsLoading(true);
       // 重新搜索当前查询并应用新过滤器
-      const results = await chromaService.searchIcons('', newFilters);
+      const results = await chromaService.searchIcons("", newFilters);
       context?.setResults(results);
     } catch (error) {
-      console.error('Filter search failed:', error);
+      console.error("Filter search failed:", error);
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +73,11 @@ const HomeContent: React.FC = () => {
 
   // 如果context不存在，显示错误信息
   if (!context) {
-    return <div className="flex min-h-screen items-center justify-center">Search context not available</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        Search context not available
+      </div>
+    );
   }
 
   // 解构context
@@ -87,21 +87,28 @@ const HomeContent: React.FC = () => {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Icon Vector Search</h1>
-          <p className="text-gray-600 dark:text-gray-400">Search for icons using natural language queries</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+            {APP_NAME}
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            {APP_DESCRIPTION}
+          </p>
         </div>
-        
+
         <SearchBar onSearch={handleSearch} />
-        
-        <FilterPanel 
-          filters={context.filters} 
-          availableFilters={availableFilters} 
-          onFilterChange={handleFilterChange} 
+
+        <FilterPanel
+          filters={context.filters}
+          availableFilters={availableFilters}
+          onFilterChange={handleFilterChange}
         />
-        
+
         <IconGrid results={context.results} onIconClick={handleIconClick} />
-        
-        <IconPreview icon={context.selectedIcon || null} onClose={handleClosePreview} />
+
+        <IconPreview
+          icon={context.selectedIcon || null}
+          onClose={handleClosePreview}
+        />
       </div>
     </div>
   );
@@ -121,7 +128,7 @@ const Home: React.FC = () => {
         // 初始化向量存储
         await chromaService.initialize();
       } catch (error) {
-        console.error('Failed to initialize app:', error);
+        console.error("Failed to initialize app:", error);
       } finally {
         setIsAppLoading(false);
       }
@@ -135,7 +142,9 @@ const Home: React.FC = () => {
       <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-600 dark:text-gray-400">Initializing icon search...</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Initializing icon search...
+          </p>
         </div>
       </div>
     );
