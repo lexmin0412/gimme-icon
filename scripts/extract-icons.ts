@@ -134,7 +134,7 @@ async function extractIcons() {
   const icons: Icon[] = [];
   
   // 1. 提取 Heroicons 图标
-  const heroiconsDir = path.join(__dirname, '../node_modules/.pnpm/@heroicons+react@2.2.0_react@19.2.1/node_modules/@heroicons/react/24');
+  const heroiconsDir = path.join(__dirname, '../node_modules/@heroicons/react/24');
   
   // 提取 Outline 图标
   const outlineDir = path.join(heroiconsDir, 'outline');
@@ -209,7 +209,7 @@ async function extractIcons() {
   }
   
   // 2. 提取 Lucide 图标
-  const lucideDir = path.join(__dirname, '../node_modules/.pnpm/lucide-react@0.556.0_react@19.2.1/node_modules/lucide-react/dist/esm/icons');
+  const lucideDir = path.join(__dirname, '../node_modules/lucide-react/dist/esm/icons');
   const lucideFiles = await fs.readdir(lucideDir);
   
   for (const file of lucideFiles) {
