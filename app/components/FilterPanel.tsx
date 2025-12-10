@@ -174,8 +174,8 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
           <div
             ref={tagsContainerRef}
             className={`flex flex-wrap gap-2 overflow-y-auto transition-all duration-300 ${isTagsExpanded
-              ? 'max-h-[6rem]' // 三行高度，每行大约2rem
-              : 'max-h-[2rem]' // 一行高度
+              ? 'max-h-24' // 三行高度，每行大约2rem
+              : 'max-h-8' // 一行高度
             }`}
             style={{
               maxHeight: isTagsExpanded ? '6rem' : '2rem'
