@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { chromaService } from '../../../services/chroma';
-import type { VectorStoreConfig } from '../../../services/vector-stores/VectorStoreFactory';
+import { chromaService } from '../../../../services/chroma';
+import type { VectorStoreConfig } from '../../../../services/vector-stores/VectorStoreFactory';
 
 // 处理向量存储配置的 API 路由
 export async function POST(request: Request) {

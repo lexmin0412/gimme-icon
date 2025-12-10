@@ -4,11 +4,11 @@ import SearchBar from "./components/SearchBar";
 import IconGrid from "./components/IconGrid";
 import FilterPanel from "./components/FilterPanel";
 import IconPreview from "./components/IconPreview";
-import { chromaService } from "./services/chroma";
-import type { SearchResult, FilterOptions } from "./types/icon";
-import { SearchProvider, SearchContext } from "./context/SearchContext";
-import { embeddingService } from "./services/embedding";
-import { APP_NAME, APP_DESCRIPTION } from "./constants";
+import { chromaService } from "../services/chroma";
+import type { SearchResult, FilterOptions } from "../types/icon";
+import { SearchProvider, SearchContext } from "../context/SearchContext";
+import { embeddingService } from "../services/embedding";
+import { APP_NAME, APP_DESCRIPTION } from "../constants";
 
 // 创建一个使用SearchContext的内部组件
 const HomeContent: React.FC = () => {

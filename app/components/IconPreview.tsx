@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import type { Icon } from '../types/icon';
+import type { Icon } from '../../types/icon';
 
 interface IconPreviewProps {
   icon: Icon | null;

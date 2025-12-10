@@ -10,7 +10,7 @@ import {
 } from "./vector-stores/VectorStoreFactory";
 
 // 从静态文件导入图标数据
-import iconsData from "../data/icons.json";
+import iconsData from "@/data/icons.json";
 
 // 检测是否在浏览器环境（客户端）
 const isClient = typeof window !== "undefined";
