@@ -1,6 +1,6 @@
 import type { Icon, SearchResult, FilterOptions } from '../types/icon';
 import { embeddingService } from './embedding';
-import type { IVectorStore } from './vector-stores/IVectorStore';
+import type { IVectorStore, VectorStoreItem } from './vector-stores/IVectorStore';
 import { VectorStoreFactory, type VectorStoreConfig } from './vector-stores/VectorStoreFactory';
 
 // 从静态文件导入图标数据
@@ -57,7 +57,7 @@ class ChromaService {
         if (vectorCount === 0) {
           console.log('Generating embeddings for all icons...');
           // 批量生成向量并添加到存储中
-          const vectorItems = [];
+          const vectorItems: VectorStoreItem[] = [];
           
           // 为每个图标生成向量，添加超时处理
           const generateEmbeddingsPromise = async () => {
@@ -75,10 +75,10 @@ class ChromaService {
                   tags: icon.tags,
                   synonyms: icon.synonyms
                 }
-              });
+              } as VectorStoreItem);
             }
             return vectorItems;
-          };
+          }
           
           // 生成向量超时控制
           const generatedVectorItems = await Promise.race([
@@ -88,9 +88,10 @@ class ChromaService {
                 reject(new Error(`Generating embeddings timed out after ${timeoutMs * 2}ms`));
               }, timeoutMs * 2); // 生成所有向量需要更长时间
             })
-          ]);
+          ]) as VectorStoreItem[]
           
           // 批量添加向量，添加超时处理
+          console.time('生成所有图标向量耗时');
           await Promise.race([
             this.vectorStore.addVectors(generatedVectorItems),
             new Promise((_, reject) => {
@@ -99,6 +100,7 @@ class ChromaService {
               }, timeoutMs);
             })
           ]);
+          console.timeEnd('生成所有图标向量耗时');
           
           console.log(`Added ${generatedVectorItems.length} vectors to store`);
         } else {
