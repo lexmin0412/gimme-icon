@@ -17,6 +17,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: APP_NAME,
   description: APP_DESCRIPTION,
+  icons: [
+    {
+      rel: 'icon',
+      type: 'image/svg+xml',
+      url: '/icon.svg',
+    },
+  ],
 };
 
 export default function RootLayout({
