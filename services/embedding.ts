@@ -1,4 +1,3 @@
-// 从 @xenova/transformers 导入 pipeline
 import { pipeline } from '@huggingface/transformers';
 
 interface ProgressCallbackData {
@@ -34,7 +33,7 @@ class EmbeddingService {
         console.log('=== Embedding Service Initialization Diagnostics ===');
         const extNavigator = navigator as ExtendedNavigator;
         console.log('Browser:', extNavigator.userAgent);
-        console.log('@xenova/transformers version:', 'N/A (runtime check)');
+        console.log('@huggingface/transformers version:', 'N/A (runtime check)');
         console.log('Support WebAssembly:', typeof WebAssembly !== 'undefined');
         console.log('Support WebGPU:', typeof extNavigator.gpu !== 'undefined');
         console.log('Support Web Workers:', typeof Worker !== 'undefined');
