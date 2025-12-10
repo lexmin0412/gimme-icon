@@ -15,10 +15,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
-    startTransition(()=>{
-      onSearch(value);
-    })
   };
+
+  const handleSearch = () => {
+    startTransition(()=>{
+      onSearch(query);
+    })
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +38,11 @@ const SearchBar: React.FC<SearchBarProps> = ({
           type="text"
           value={query}
           onChange={handleInputChange}
+          onKeyDown={(event)=>{
+            if (event.key === 'Enter') {
+              handleSearch()
+            }
+          }}
           placeholder={placeholder}
           className="w-full px-4 py-3 pl-12 text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white dark:border-gray-700"
         />
