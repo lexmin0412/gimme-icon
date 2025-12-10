@@ -1,36 +1,170 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Gimme Icon Next
 
-## Getting Started
+一个基于 Next.js 和向量数据库的智能图标搜索应用，支持自然语言搜索和用户标注功能。
 
-First, run the development server:
+## 功能特性
+
+- 🔍 **智能搜索**: 使用向量数据库和自然语言处理实现图标搜索
+- 🎨 **多图标库支持**: 集成 Heroicons 和 Lucide 图标库
+- 📝 **用户标注**: 支持用户对图标进行标签标注
+- 💾 **本地数据存储**: 当前使用JSON文件存储图标数据，支持后续对接数据库
+- 🎯 **实时预览**: 搜索结果实时预览，支持筛选和排序
+- 🚀 **高性能**: 基于 Next.js 16 和 React 19 构建，支持服务端渲染
+
+## 技术栈
+
+- **前端框架**: Next.js 16.0.8 + React 19.2.1
+- **图标库**: Heroicons 2.2.0, Lucide 0.556.0
+- **向量数据库**: ChromaDB 3.1.6（可选）
+- **Embedding 模型**: Xenova/all-MiniLM-L6-v2
+- **构建工具**: TypeScript 5, tsx 4.21.0
+- **样式**: Tailwind CSS 4
+- **包管理器**: pnpm 10.24.0
+
+## 快速开始
+
+### 环境要求
+
+- Node.js >= 20
+- pnpm >= 10
+
+### 安装依赖
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 生成图标数据
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm run gen-icons
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 启动开发服务器
 
-## Learn More
+```bash
+pnpm run dev
+```
 
-To learn more about Next.js, take a look at the following resources:
+应用将在 `http://localhost:3000` 启动。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 构建生产版本
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm run build
+pnpm run start
+```
 
-## Deploy on Vercel
+## 项目结构
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+├── app/                  # Next.js App Router 应用目录
+│   ├── api/              # API 路由
+│   │   ├── chroma/       # ChromaDB 相关 API
+│   │   └── update-tag/   # 标签更新 API
+│   ├── components/       # React 组件
+│   ├── layout.tsx        # 应用布局
+│   └── page.tsx          # 首页
+├── constants/            # 常量定义
+├── context/              # React 上下文
+├── data/                 # 数据文件
+│   └── icons.json        # 图标数据
+├── hooks/                # 自定义 Hooks
+├── public/               # 静态资源
+├── scripts/              # 脚本文件
+│   └── extract-icons.ts  # 图标提取脚本
+├── services/             # 服务层
+│   ├── vector-stores/    # 向量存储实现
+│   ├── chroma.ts         # ChromaDB 服务
+│   └── embedding.ts      # 嵌入式模型服务
+└── types/                # TypeScript 类型定义
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 核心功能说明
+
+### 图标提取
+
+使用 `scripts/extract-icons.ts` 脚本从Heroicons和Lucide图标库中提取图标数据：
+
+```bash
+pnpm run gen-icons
+```
+
+脚本会：
+1. 解析图标库的React组件
+2. 提取SVG路径和属性
+3. 生成带标签和同义词的图标数据
+4. 保存到 `data/icons.json` 文件
+
+### 智能搜索
+
+基于向量数据库实现的自然语言搜索功能：
+
+1. 将图标描述和标签转换为向量嵌入
+2. 使用ChromaDB进行相似性搜索
+3. 支持语义理解和模糊匹配
+
+### 用户标注
+
+用户可以对图标进行标签标注，标注数据会：
+1. 更新 `data/icons.json` 文件
+2. 支持后续对接数据库
+3. 提高搜索准确性
+
+## 向量存储实现
+
+项目支持多种向量存储实现，通过 `VectorStoreFactory` 工厂类进行切换：
+
+- `MemoryVectorStore`: 内存存储（默认）
+- `LocalChromaVectorStore`: 本地ChromaDB存储
+- `CloudChromaVectorStore`: 云端ChromaDB存储
+
+## 开发指南
+
+### 代码风格
+
+使用ESLint进行代码检查：
+
+```bash
+pnpm run lint
+```
+
+### 类型检查
+
+```bash
+pnpm exec tsc --noEmit
+```
+
+### 图标更新
+
+当图标库更新时，重新生成图标数据：
+
+```bash
+pnpm run gen-icons
+```
+
+## 贡献指南
+
+1. Fork 项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开 Pull Request
+
+## 许可证
+
+MIT License
+
+## 未来计划
+
+- [ ] 对接数据库存储
+- [ ] 支持更多图标库
+- [ ] 添加图标收藏功能
+- [ ] 实现图标上传功能
+- [ ] 支持多语言
+- [ ] 优化搜索算法
+- [ ] 支持自定义 Embedding 模型
+
+## 联系方式
+
+- 项目地址: https://github.com/lexmin0412/gimme-icon-next
