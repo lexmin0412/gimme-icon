@@ -6,6 +6,8 @@
 
 [![Vercel](https://img.shields.io/badge/vercel-live-green?style=flat&logo=vercel)](https://gimme-icon-next.vercel.app) [![License](https://img.shields.io/github/license/lexmin0412/gimme-icon?color=blue)](LICENSE)
 
+![搜索示例](./screenshots/search.png)
+
 ## ✨ 为什么需要 Gimme Icon？
 
 现有的图标平台（如 Iconify、Heroicons）要求你**知道图标的确切名称或关键词**：
