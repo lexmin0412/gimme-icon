@@ -1,5 +1,15 @@
 import { pipeline } from '@huggingface/transformers';
 
+// 定义可用的向量模型
+const AVAILABLE_MODELS = {
+  ENGLISH: 'Xenova/all-MiniLM-L6-v2',
+  MULTILINGUAL: 'Xenova/paraphrase-multilingual-MiniLM-L12-v2'
+};
+
+// 导出模型类型供其他组件使用
+export type ModelId = typeof AVAILABLE_MODELS[keyof typeof AVAILABLE_MODELS];
+export { AVAILABLE_MODELS };
+
 interface ProgressCallbackData {
   status?: string;
   file?: string;
@@ -16,6 +26,7 @@ class EmbeddingService {
   private embedder: any; // 使用 any 类型绕过类型检查，因为 pipeline 返回的类型复杂且不透明
   private initialized: boolean = false;
   private useFallback: boolean = false; // 默认尝试使用真实模型
+  private currentModelId: ModelId = AVAILABLE_MODELS.MULTILINGUAL; // 默认使用多语言模型
 
   async initialize() {
     if (this.initialized || this.useFallback) return;
@@ -44,12 +55,12 @@ class EmbeddingService {
         // 在浏览器环境下加载模型，使用量化版本以提高性能
         // 添加更多调试信息，查看模型下载的URL和请求状态
         console.log('=== Model Loading Configuration ===');
-        console.log('Model ID:', 'Xenova/all-MiniLM-L6-v2');
+        console.log('Model ID:', this.currentModelId);
         console.log('Pipeline Type:', 'feature-extraction');
         console.log('Quantized:', true);
         
         // 使用Promise.race实现超时控制
-        const pipelinePromise = pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+        const pipelinePromise = pipeline('feature-extraction', this.currentModelId, {
           progress_callback: (data: ProgressCallbackData) => {
             // console.log('进度数据:', JSON.stringify(data, null, 2));
             if (data.status) {
@@ -186,6 +197,42 @@ class EmbeddingService {
   // 检查是否处于降级模式
   isUsingFallback(): boolean {
     return this.useFallback;
+  }
+
+  // 获取当前使用的模型ID
+  getCurrentModel(): ModelId {
+    return this.currentModelId;
+  }
+
+  // 切换模型
+  async setModel(modelId: ModelId): Promise<boolean> {
+    // 检查模型ID是否有效
+    const isValidModel = Object.values(AVAILABLE_MODELS).includes(modelId);
+    if (!isValidModel) {
+      console.error('Invalid model ID:', modelId);
+      return false;
+    }
+
+    // 如果模型没有改变，直接返回
+    if (this.currentModelId === modelId) {
+      return true;
+    }
+
+    // 重置状态
+    this.currentModelId = modelId;
+    this.initialized = false;
+    this.embedder = null;
+    this.useFallback = false;
+
+    // 重新初始化模型
+    try {
+      await this.initialize();
+      return true;
+    } catch (error) {
+      console.error('Failed to initialize new model:', error);
+      this.useFallback = true;
+      return false;
+    }
   }
 }
 
