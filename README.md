@@ -13,9 +13,10 @@
 - 想找“搜索”图标？你得输入 `search`。
 - 想找“用户头像”？你得知道它叫 `user` 或 `account`。
 
-但现实中，你更可能这样想：
-> “我需要一个**表示加载中的旋转动画图标**”  
-> “有没有**绿色的对勾，代表成功**的图标？”
+但现实中，你在寻找一个图标时，第一时间冒出的形容词为：
+- “向下的箭头”
+- “代表删除的垃圾桶图标”
+- “带加号的房子”
 
 **Gimme Icon 让你像说话一样搜索图标**——无需记忆命名规范，语义理解直达结果。
 
@@ -33,9 +34,9 @@
 
 1. 访问在线 Demo 👉 [https://gimme-icon-next.vercel.app](https://gimme-icon-next.vercel.app)
 2. 尝试搜索：
-   - “一个蓝色的返回箭头”
+   - “向下的箭头”
    - “代表删除的垃圾桶图标”
-   - “科技感的设置齿轮”
+   - “带加号的房子”
 
 ## 技术栈
 
@@ -44,7 +45,7 @@
 - **构建工具**: Turbopack
 - **类型系统**: TypeScript 5
 - **样式**: Tailwind CSS 4
-- **包管理器**: pnpm 10.24.0
+- **包管理器**: pnpm 10
 
 ## 快速开始
 
@@ -86,22 +87,15 @@ pnpm start
 ```
 ├── app/                  # Next.js App Router 应用目录
 │   ├── api/              # API 路由
-│   │   ├── chroma/       # ChromaDB 相关 API
-│   │   └── update-tag/   # 标签更新 API
-│   ├── components/       # React 组件
+│   ├── components/       # 组件
 │   ├── layout.tsx        # 应用布局
 │   └── page.tsx          # 首页
 ├── constants/            # 常量定义
 ├── context/              # React 上下文
-├── data/                 # 数据文件
-│   └── icons.json        # 图标数据
 ├── hooks/                # 自定义 Hooks
 ├── public/               # 静态资源
-├── scripts/              # 脚本文件
-│   └── extract-icons.ts  # 图标提取脚本
 ├── services/             # 服务层
 │   ├── vector-stores/    # 向量存储实现
-│   ├── chroma.ts         # ChromaDB 服务
 │   └── embedding.ts      # 嵌入式模型服务
 └── types/                # TypeScript 类型定义
 ```
