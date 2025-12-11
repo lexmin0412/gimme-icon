@@ -1,3 +1,6 @@
+// 导出超时处理工具函数
+export { withTimeout } from './timeout';
+
 /**
  * 为图标生成自然语言描述，用于向量化
  * @param name 图标名称，如 "access-point-minus"
