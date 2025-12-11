@@ -13,6 +13,7 @@ import { generateHash } from "../utils/hash";
 
 // 从静态文件导入图标数据
 import iconsData from "@/data/icons.json";
+import { generateDescriptionForIcon } from "@/utils";
 
 // 检测是否在浏览器环境（客户端）
 const isClient = typeof window !== "undefined";
@@ -104,9 +105,11 @@ class ChromaService {
               console.time("生成所有图标向量耗时");
               const items: VectorStoreItem[] = [];
               for (const icon of this.icons) {
-                const document = `${icon.name} ${icon.tags.join(
-                  " "
-                )} ${icon.synonyms.join(" ")}`;
+                // const document = `${icon.name} ${icon.tags.join(
+                //   " "
+                // )} ${icon.synonyms.join(" ")}`;
+                // 生成图标描述 优化搜索效果
+                const document = generateDescriptionForIcon(icon.name, icon.category);
                 const embedding = await embeddingService.generateEmbedding(
                   document
                 );
