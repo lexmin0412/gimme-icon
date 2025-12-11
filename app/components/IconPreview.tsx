@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import type { Icon } from '@/types/icon';
 import { useToast } from './ToastProvider';
+import { Icon as IconifyIcon } from '@iconify/react';
 
 interface IconPreviewProps {
   icon: Icon | null;
@@ -93,7 +94,7 @@ const IconPreview: React.FC<IconPreviewProps> = ({ icon, onClose, onTagAdded }) 
 
         <div className="flex flex-col items-center mb-6">
           <div className="p-6 bg-gray-100 rounded-lg dark:bg-gray-700">
-            <div dangerouslySetInnerHTML={{ __html: icon.svg }} className="w-24 h-24 flex items-center justify-center" />
+            <IconifyIcon icon={`${icon.library}:${icon.name}`} width={36} height={36} />
           </div>
           <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">{icon.name}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">{icon.library} - {icon.category}</p>

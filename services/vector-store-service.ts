@@ -12,8 +12,6 @@ import localforage from "localforage";
 import { generateHash } from "../utils/hash";
 import { withTimeout } from "../utils";
 
-// 从静态文件导入图标数据
-import iconsData from "@/data/icons.json";
 import { generateDescriptionForIcon } from "@/utils";
 import { loadIcons } from "./icons";
 
@@ -81,7 +79,7 @@ class VectorStoreService {
 
         if (shouldGenerateVectors) {
           // 生成icons.json内容的哈希值
-          const iconsJsonString = JSON.stringify(iconsData);
+          const iconsJsonString = JSON.stringify(this.icons);
           const iconsHash = generateHash(iconsJsonString);
           const vectorStoreName = `gimme_icons_${iconsHash}_${embeddingService
             .getCurrentModel()
