@@ -138,7 +138,7 @@ const HomeContent: React.FC = () => {
 
             {/* 模型选择下拉菜单 */}
             {showSettingsMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
+              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
                 <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-4 py-2">Vector Model</h3>
                 <button
                   onClick={() => handleModelChange(AVAILABLE_MODELS.ENGLISH)}
@@ -202,11 +202,11 @@ const HomeContent: React.FC = () => {
 
         <SearchBar onSearch={handleSearch} />
 
-        <FilterPanel
+        {/* <FilterPanel
           filters={context.filters}
           availableFilters={availableFilters}
           onFilterChange={handleFilterChange}
-        />
+        /> */}
 
         <IconGrid results={context.results} onIconClick={handleIconClick} />
 
