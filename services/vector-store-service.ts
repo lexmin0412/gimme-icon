@@ -15,13 +15,14 @@ import { withTimeout } from "../utils";
 // 从静态文件导入图标数据
 import iconsData from "@/data/icons.json";
 import { generateDescriptionForIcon } from "@/utils";
+import { loadIcons } from "./icons";
 
 // 检测是否在浏览器环境（客户端）
 const isClient = typeof window !== "undefined";
 
 class VectorStoreService {
   private initialized: boolean = false;
-  private icons: Icon[] = iconsData;
+  private icons: Icon[] = [];
   private vectorStore: IVectorStore;
   private vectorStoreConfig: VectorStoreConfig;
 
@@ -31,8 +32,17 @@ class VectorStoreService {
   }
 
   async initialize(forceRegenerate: boolean = false) {
-    console.log('重新初始化', this.initialized, 'forceRegenerate:', forceRegenerate)
+    console.log(
+      "重新初始化",
+      this.initialized,
+      "forceRegenerate:",
+      forceRegenerate
+    );
     if (this.initialized && !forceRegenerate) return;
+
+    // 加载所有图标
+    const innerIcons = await loadIcons(["lucide", "heroicons", "ant-design"]);
+    this.icons = innerIcons;
 
     try {
       // 如果是客户端且使用云向量存储，跳过本地初始化，因为实际操作会通过API路由在服务端执行
@@ -56,7 +66,7 @@ class VectorStoreService {
       if (!embeddingService.isUsingFallback()) {
         // 如果强制重新生成，或者向量计数为0，则生成向量
         let shouldGenerateVectors = forceRegenerate;
-        
+
         if (!shouldGenerateVectors) {
           // 检查是否需要生成向量，添加超时处理
           const vectorCount = await withTimeout(
@@ -65,7 +75,7 @@ class VectorStoreService {
             `Get vector count timed out after ${timeoutMs}ms`
           );
 
-          console.log('vectorCount', vectorCount);
+          console.log("vectorCount", vectorCount);
           shouldGenerateVectors = vectorCount === 0;
         }
 
@@ -73,43 +83,59 @@ class VectorStoreService {
           // 生成icons.json内容的哈希值
           const iconsJsonString = JSON.stringify(iconsData);
           const iconsHash = generateHash(iconsJsonString);
-          const vectorStoreName = `gimme_icons_${iconsHash}_${embeddingService.getCurrentModel().replace(/\//g, '_')}`;
+          const vectorStoreName = `gimme_icons_${iconsHash}_${embeddingService
+            .getCurrentModel()
+            .replace(/\//g, "_")}`;
           let vectorItems: VectorStoreItem[] = [];
 
           // 检查IndexedDB中是否已有向量数据
           if (isClient && !forceRegenerate) {
             try {
-              console.log(`Checking IndexedDB for vector store: ${vectorStoreName}`);
-              const storedVectors = await localforage.getItem<VectorStoreItem[]>(vectorStoreName);
-              
+              console.log(
+                `Checking IndexedDB for vector store: ${vectorStoreName}`
+              );
+              const storedVectors = await localforage.getItem<
+                VectorStoreItem[]
+              >(vectorStoreName);
+
               if (storedVectors && storedVectors.length > 0) {
-                console.log(`Found ${storedVectors.length} vectors in IndexedDB, reusing them`);
+                console.log(
+                  `Found ${storedVectors.length} vectors in IndexedDB, reusing them`
+                );
                 vectorItems = storedVectors;
               } else {
-                console.log("No vectors found in IndexedDB, generating new ones");
+                console.log(
+                  "No vectors found in IndexedDB, generating new ones"
+                );
               }
             } catch (error) {
               console.error("Error accessing IndexedDB:", error);
             }
           } else {
-            console.log("Force regenerate or not client, skipping IndexedDB check");
+            console.log(
+              "Force regenerate or not client, skipping IndexedDB check"
+            );
           }
 
           // 如果没有从IndexedDB获取到向量，就生成新的向量
           if (vectorItems.length === 0) {
             console.log("Generating embeddings for all icons...");
             // 批量生成向量并添加到存储中
-            
+
             // 为每个图标生成向量，添加超时处理
             const generateEmbeddingsPromise = async () => {
               console.time("生成所有图标向量耗时");
+
               const items: VectorStoreItem[] = [];
               for (const icon of this.icons) {
                 // const document = `${icon.name} ${icon.tags.join(
                 //   " "
                 // )} ${icon.synonyms.join(" ")}`;
                 // 生成图标描述 优化搜索效果
-                const document = generateDescriptionForIcon(icon.name, icon.category);
+                const document = generateDescriptionForIcon(
+                  icon.name,
+                  icon.category
+                );
                 const embedding = await embeddingService.generateEmbedding(
                   document
                 );
@@ -137,12 +163,14 @@ class VectorStoreService {
               `Generating embeddings timed out after ${timeoutMs * 2}ms`
             )) as VectorStoreItem[];
 
-            console.log('generatedVectorItems', vectorItems);
+            console.log("generatedVectorItems", vectorItems);
 
             // 将生成的向量存储到IndexedDB中
             if (isClient) {
               try {
-                console.log(`Storing ${vectorItems.length} vectors in IndexedDB: ${vectorStoreName}`);
+                console.log(
+                  `Storing ${vectorItems.length} vectors in IndexedDB: ${vectorStoreName}`
+                );
                 await localforage.setItem(vectorStoreName, vectorItems);
                 console.log("Vectors stored in IndexedDB successfully");
               } catch (error) {
@@ -401,23 +429,26 @@ class VectorStoreService {
 
   // 重新初始化向量存储
   async reInitialize(): Promise<void> {
-    console.log('开始重新初始化向量存储');
-    
+    console.log("开始重新初始化向量存储");
+
     // 首先强制重置初始化状态
     this.initialized = false;
-    console.log('重置initialized状态为:', this.initialized);
-    
+    console.log("重置initialized状态为:", this.initialized);
+
     // 直接创建新的向量存储实例，不依赖工厂的remove方法
     // 使用唯一的instanceKey确保获取全新实例
     const uniqueKey = Date.now().toString();
-    this.vectorStore = VectorStoreFactory.createVectorStore(this.vectorStoreConfig, uniqueKey);
-    console.log('创建了新的向量存储实例');
-    
+    this.vectorStore = VectorStoreFactory.createVectorStore(
+      this.vectorStoreConfig,
+      uniqueKey
+    );
+    console.log("创建了新的向量存储实例");
+
     try {
       // 调用initialize方法前，再次确认initialized状态
       this.initialized = false;
-      console.log('调用initialize前的initialized状态:', this.initialized);
-      
+      console.log("调用initialize前的initialized状态:", this.initialized);
+
       // 重新调用初始化方法，传入forceRegenerate: true确保重新生成向量
       await this.initialize(true);
     } catch (error) {
