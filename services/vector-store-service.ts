@@ -75,7 +75,7 @@ class VectorStoreService {
           // 生成icons.json内容的哈希值
           const iconsJsonString = JSON.stringify(iconsData);
           const iconsHash = generateHash(iconsJsonString);
-          const vectorStoreName = `gimme_icons_${iconsHash}`;
+          const vectorStoreName = `gimme_icons_${iconsHash}_${embeddingService.getCurrentModel().replace(/\//g, '_')}`;
           let vectorItems: VectorStoreItem[] = [];
 
           // 检查IndexedDB中是否已有向量数据
