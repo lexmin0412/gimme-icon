@@ -1,27 +1,59 @@
-# Gimme Icon Next
+# Gimme Icon
 
-一个基于 Next.js 和向量数据库的智能图标搜索应用，支持自然语言搜索和用户标注功能。
+**基于自然语言的图标搜索引擎。**
+
+告别记忆图标名称！用 "一个代表用户设置的齿轮图标" 这样的自然语言描述，迅速找到你想要的图标。
+
+[![Vercel](https://img.shields.io/badge/vercel-live-green?style=flat&logo=vercel)](https://gimme-icon-next.vercel.app) [![License](https://img.shields.io/github/license/lexmin0412/gimme-icon?color=blue)](LICENSE)
+
+## ✨ 为什么需要 Gimme Icon？
+
+现有的图标平台（如 Iconify、Heroicons）要求你**知道图标的确切名称或关键词**：
+
+- 想找“搜索”图标？你得输入 `search`。
+- 想找“用户头像”？你得知道它叫 `user` 或 `account`。
+
+但现实中，你更可能这样想：
+> “我需要一个**表示加载中的旋转动画图标**”  
+> “有没有**绿色的对勾，代表成功**的图标？”
+
+**Gimme Icon 让你像说话一样搜索图标**——无需记忆命名规范，语义理解直达结果。
 
 ## 功能特性
 
-- 🔍 **智能搜索**: 使用向量数据库和自然语言处理实现图标搜索
-- 🎨 **多图标库支持**: 集成 Heroicons 和 Lucide 图标库
-- 📝 **用户标注**: 支持用户对图标进行标签标注
-- 💾 **本地数据存储**: 当前使用JSON文件存储图标数据，支持后续对接数据库
-- 🎯 **实时预览**: 搜索结果实时预览，支持筛选和排序
+- ✅ **自然语言搜索**：输入描述性语句，AI 理解意图并匹配图标
+- 🧩 **聚合多图标库**：默认支持 Heroicons、Lucide，可扩展至 Iconify 全量图标集（200+ 库）
+- ⚡ **前端向量化**：使用 [Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) 在浏览器生成嵌入向量，**无需后端**
+- 🛠 **按需加载**：首次仅索引常用库，用户可自定义启用更多图标集
+- 💾 **离线可用**：向量化结果缓存至 IndexedDB，断网也能搜索
 - 🚀 **高性能**: 基于 Next.js 16 和 React 19 构建，支持服务端渲染
+- 🌐 **开源 & 免费**：MIT 许可，无 API 调用限制
+
+## 🚀 快速体验
+
+1. 访问在线 Demo 👉 [https://gimme-icon-next.vercel.app](https://gimme-icon-next.vercel.app)
+2. 尝试搜索：
+   - “一个蓝色的返回箭头”
+   - “代表删除的垃圾桶图标”
+   - “科技感的设置齿轮”
 
 ## 技术栈
 
-- **前端框架**: Next.js 16.0.8 + React 19.2.1
-- **图标库**: Heroicons 2.2.0, Lucide 0.556.0
-- **向量数据库**: ChromaDB 3.1.6（可选）
-- **Embedding 模型**: Xenova/all-MiniLM-L6-v2
-- **构建工具**: TypeScript 5, tsx 4.21.0
+- **前端框架**: Next.js 16（App Router） + React 19
+- **向量模型**：`@xenova/transformers` + `all-MiniLM-L6-v2`
+- **构建工具**: Turbopack
+- **类型系统**: TypeScript 5
 - **样式**: Tailwind CSS 4
 - **包管理器**: pnpm 10.24.0
 
 ## 快速开始
+
+### Clone 仓库
+
+```bash
+git clone https://github.com/lexmin0412/gimme-icon.git
+cd gimme-icon
+```
 
 ### 环境要求
 
@@ -34,16 +66,10 @@
 pnpm install
 ```
 
-### 生成图标数据
-
-```bash
-pnpm run gen-icons
-```
-
 ### 启动开发服务器
 
 ```bash
-pnpm run dev
+pnpm dev
 ```
 
 应用将在 `http://localhost:3000` 启动。
@@ -51,8 +77,8 @@ pnpm run dev
 ### 构建生产版本
 
 ```bash
-pnpm run build
-pnpm run start
+pnpm build
+pnpm start
 ```
 
 ## 项目结构
@@ -119,30 +145,6 @@ pnpm run gen-icons
 - `LocalChromaVectorStore`: 本地ChromaDB存储
 - `CloudChromaVectorStore`: 云端ChromaDB存储
 
-## 开发指南
-
-### 代码风格
-
-使用ESLint进行代码检查：
-
-```bash
-pnpm run lint
-```
-
-### 类型检查
-
-```bash
-pnpm exec tsc --noEmit
-```
-
-### 图标更新
-
-当图标库更新时，重新生成图标数据：
-
-```bash
-pnpm run gen-icons
-```
-
 ## 贡献指南
 
 1. Fork 项目
@@ -167,4 +169,4 @@ MIT License
 
 ## 联系方式
 
-- 项目地址: https://github.com/lexmin0412/gimme-icon-next
+- 项目地址: https://github.com/lexmin0412/gimme-icon
