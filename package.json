@@ -18,6 +18,7 @@
     "@chroma-core/default-embed": "^0.1.9",
     "@heroicons/react": "^2.2.0",
     "@huggingface/transformers": "^3.8.1",
+    "@iconify/react": "^6.0.2",
     "chromadb": "^3.1.6",
     "localforage": "^1.10.0",
     "lucide-react": "^0.556.0",

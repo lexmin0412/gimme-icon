@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { SearchResult } from "../../types/icon";
+import { Icon } from "@iconify/react";
 
 interface IconGridProps {
   results: SearchResult[];
@@ -77,10 +78,7 @@ const IconGrid: React.FC<IconGridProps> = ({ results, onIconClick }) => {
             className="group p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:border-blue-600"
           >
             <div className="flex items-center justify-center h-20 mb-3">
-              <div
-                dangerouslySetInnerHTML={{ __html: result.icon.svg }}
-                className="w-9 h-9 group-hover:scale-110 transition-transform flex items-center justify-center"
-              />
+              <Icon icon={`${result.icon.library}:${result.icon.name}`} width={36} height={36} />
             </div>
             <h3 className="text-xs font-medium text-center text-gray-900 truncate dark:text-white">
               {result.icon.name}
