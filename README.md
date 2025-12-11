@@ -106,67 +106,6 @@ pnpm start
 └── types/                # TypeScript 类型定义
 ```
 
-## 核心功能说明
-
-### 图标提取
-
-使用 `scripts/extract-icons.ts` 脚本从Heroicons和Lucide图标库中提取图标数据：
-
-```bash
-pnpm run gen-icons
-```
-
-脚本会：
-1. 解析图标库的React组件
-2. 提取SVG路径和属性
-3. 生成带标签和同义词的图标数据
-4. 保存到 `data/icons.json` 文件
-
-### 智能搜索
-
-基于向量数据库实现的自然语言搜索功能：
-
-1. 将图标描述和标签转换为向量嵌入
-2. 使用ChromaDB进行相似性搜索
-3. 支持语义理解和模糊匹配
-
-### 用户标注
-
-用户可以对图标进行标签标注，标注数据会：
-1. 更新 `data/icons.json` 文件
-2. 支持后续对接数据库
-3. 提高搜索准确性
-
-## 向量存储实现
-
-项目支持多种向量存储实现，通过 `VectorStoreFactory` 工厂类进行切换：
-
-- `MemoryVectorStore`: 内存存储（默认）
-- `LocalChromaVectorStore`: 本地ChromaDB存储
-- `CloudChromaVectorStore`: 云端ChromaDB存储
-
-## 贡献指南
-
-1. Fork 项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开 Pull Request
-
 ## 许可证
 
 MIT License
-
-## 未来计划
-
-- [ ] 对接数据库存储
-- [ ] 支持更多图标库
-- [ ] 添加图标收藏功能
-- [ ] 实现图标上传功能
-- [ ] 支持多语言
-- [ ] 优化搜索算法
-- [ ] 支持自定义 Embedding 模型
-
-## 联系方式
-
-- 项目地址: https://github.com/lexmin0412/gimme-icon
