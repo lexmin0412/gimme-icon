@@ -126,7 +126,7 @@ const HomeContent: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-              className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+              className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors flex items-center"
               aria-label="Settings"
               disabled={isChangingModel}
             >
