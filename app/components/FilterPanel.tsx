@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import type { FilterOptions } from '../../types/icon';
-import { chromaService } from '../../services/chroma';
+import { vectorStoreService } from '../../services/vector-store-service';
 import type { VectorStoreConfig } from '../../services/vector-stores/VectorStoreFactory';
 import { useToast } from './ToastProvider';
 
@@ -107,7 +107,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         })
       };
       
-      await chromaService.switchVectorStore(config);
+      await vectorStoreService.switchVectorStore(config);
       console.log('Vector store configuration applied successfully');
     } catch (error) {
       console.error('Failed to apply vector store configuration:', error);

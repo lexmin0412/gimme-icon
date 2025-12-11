@@ -18,7 +18,7 @@ import { generateDescriptionForIcon } from "@/utils";
 // 检测是否在浏览器环境（客户端）
 const isClient = typeof window !== "undefined";
 
-class ChromaService {
+class VectorStoreService {
   private initialized: boolean = false;
   private icons: Icon[] = iconsData;
   private vectorStore: IVectorStore;
@@ -191,7 +191,7 @@ class ChromaService {
         );
         // 注意：这里我们不能直接设置embeddingService的useFallback属性，因为它是私有属性
         // 我们可以通过调用generateEmbedding方法来间接触发降级模式
-        // 或者，我们可以在ChromaService中添加一个标志来指示使用降级模式
+        // 或者，我们可以在VectorStoreService中添加一个标志来指示使用降级模式
         // 由于我们已经在catch块中将initialized设置为true，应用将继续运行，但搜索会使用降级的文本搜索
       }
     }
@@ -451,4 +451,4 @@ class ChromaService {
 }
 
 // 默认使用内存向量存储
-export const chromaService = new ChromaService();
+export const vectorStoreService = new VectorStoreService();

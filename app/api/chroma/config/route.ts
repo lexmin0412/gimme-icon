@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { chromaService } from '../../../../services/chroma';
+import { vectorStoreService } from '../../../../services/vector-store-service';
 import type { VectorStoreConfig } from '../../../../services/vector-stores/VectorStoreFactory';
 
 // 处理向量存储配置的 API 路由
@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     
     // 如果是云向量存储，在服务端处理
     if (config.type === 'cloud-chroma') {
-      await chromaService.switchVectorStore(config);
+      await vectorStoreService.switchVectorStore(config);
       return NextResponse.json({ success: true, message: 'Vector store configuration applied successfully' });
     }
     
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 // 获取当前向量存储配置
 export async function GET() {
   try {
-    const config = chromaService.getVectorStoreConfig();
+    const config = vectorStoreService.getVectorStoreConfig();
     return NextResponse.json({ success: true, config });
   } catch (error) {
     console.error('Failed to get vector store configuration:', error);

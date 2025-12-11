@@ -4,7 +4,7 @@ import SearchBar from "./components/SearchBar";
 import IconGrid from "./components/IconGrid";
 import FilterPanel from "./components/FilterPanel";
 import IconPreview from "./components/IconPreview";
-import { chromaService } from "../services/chroma";
+import { vectorStoreService } from "../services/vector-store-service";
 import type { SearchResult, FilterOptions } from "../types/icon";
 import { SearchProvider, SearchContext } from "../context/SearchContext";
 import { embeddingService } from "../services/embedding";
@@ -23,7 +23,7 @@ const HomeContent: React.FC = () => {
 
   const triggerFirstSearch = async () => {
     // 初始搜索（空查询，返回所有图标）
-    const initialResults = await chromaService.searchIcons(
+    const initialResults = await vectorStoreService.searchIcons(
       "",
       context?.filters || { libraries: [], categories: [], tags: [] }
     );
@@ -43,7 +43,7 @@ const HomeContent: React.FC = () => {
     context?.setQuery(query);
     try {
       setIsLoading(true);
-      const results = await chromaService.searchIcons(
+      const results = await vectorStoreService.searchIcons(
         query,
         context?.filters || { libraries: [], categories: [], tags: [] }
       );
@@ -61,7 +61,7 @@ const HomeContent: React.FC = () => {
     try {
       setIsLoading(true);
       // 重新搜索当前查询并应用新过滤器
-      const results = await chromaService.searchIcons("", newFilters);
+      const results = await vectorStoreService.searchIcons("", newFilters);
       context?.setResults(results);
     } catch (error) {
       console.error("Filter search failed:", error);
@@ -90,7 +90,7 @@ const HomeContent: React.FC = () => {
       if (success) {
         setCurrentModel(newModel);
         // 重新初始化向量存储
-        await chromaService.initialize();
+        await vectorStoreService.initialize();
         // 刷新搜索结果
         await triggerFirstSearch();
         showToast('Model switched successfully!', 'success');
@@ -231,7 +231,7 @@ const Home: React.FC = () => {
         // 初始化嵌入服务
         await embeddingService.initialize();
         // 初始化向量存储
-        await chromaService.initialize();
+        await vectorStoreService.initialize();
       } catch (error) {
         console.error("Failed to initialize app:", error);
       } finally {
