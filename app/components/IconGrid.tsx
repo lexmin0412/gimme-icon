@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import type { SearchResult } from "../../types/icon";
+import type { SearchResult } from "@/types/icon";
 import { Icon } from "@iconify/react";
 
 interface IconGridProps {

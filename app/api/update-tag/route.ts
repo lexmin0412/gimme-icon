@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
-import { vectorStoreService } from '../../../services/vector-store-service';
-import { embeddingService } from '../../../services/embedding';
-import type { Icon } from '../../../types/icon';
+import { vectorStoreService } from '@/services/vector-store-service';
+import { embeddingService } from '@/services/embedding';
+import type { Icon } from '@/types/icon';
 
 type UpdateTagRequest = {
   id: string;

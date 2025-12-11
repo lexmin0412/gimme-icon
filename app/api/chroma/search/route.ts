@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { vectorStoreService } from '../../../../services/vector-store-service';
-import type { FilterOptions } from '../../../../types/icon';
+import { vectorStoreService } from '@/services/vector-store-service';
+import type { FilterOptions } from '@/types/icon';
 
 // 处理向量搜索的 API 路由
 export async function POST(request: Request) {

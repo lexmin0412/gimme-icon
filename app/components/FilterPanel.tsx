@@ -1,8 +1,8 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
-import type { FilterOptions } from '../../types/icon';
-import { vectorStoreService } from '../../services/vector-store-service';
-import type { VectorStoreConfig } from '../../services/vector-stores/VectorStoreFactory';
+import type { FilterOptions } from '@/types/icon';
+import { vectorStoreService } from '@/services/vector-store-service';
+import type { VectorStoreConfig } from '@/services/vector-stores/VectorStoreFactory';
 import { useToast } from './ToastProvider';
 
 interface FilterPanelProps {

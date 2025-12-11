@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import type { Icon } from '../../types/icon';
+import type { Icon } from '@/types/icon';
 import { useToast } from './ToastProvider';
 
 interface IconPreviewProps {

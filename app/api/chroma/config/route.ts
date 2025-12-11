@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { vectorStoreService } from '../../../../services/vector-store-service';
-import type { VectorStoreConfig } from '../../../../services/vector-stores/VectorStoreFactory';
+import { vectorStoreService } from '@/services/vector-store-service';
+import type { VectorStoreConfig } from '@/services/vector-stores/VectorStoreFactory';
 
 // 处理向量存储配置的 API 路由
 export async function POST(request: Request) {
