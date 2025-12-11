@@ -2,7 +2,7 @@
 
 **基于自然语言的图标搜索引擎。**
 
-告别记忆图标名称！用 "一个代表用户设置的齿轮图标" 这样的自然语言描述，迅速找到你想要的图标。
+告别记忆图标名称！用 "一个向下的箭头" 这样的自然语言描述，迅速找到你想要的图标。
 
 [![Vercel](https://img.shields.io/badge/vercel-live-green?style=flat&logo=vercel)](https://gimme-icon-next.vercel.app) [![License](https://img.shields.io/github/license/lexmin0412/gimme-icon?color=blue)](LICENSE)
 
