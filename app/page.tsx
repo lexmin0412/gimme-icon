@@ -90,7 +90,7 @@ const HomeContent: React.FC = () => {
       if (success) {
         setCurrentModel(newModel);
         // 重新初始化向量存储
-        await vectorStoreService.initialize();
+        await vectorStoreService.reInitialize();
         // 刷新搜索结果
         await triggerFirstSearch();
         showToast('Model switched successfully!', 'success');
