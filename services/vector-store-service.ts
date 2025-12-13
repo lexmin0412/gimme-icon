@@ -29,7 +29,7 @@ class VectorStoreService {
     this.vectorStore = VectorStoreFactory.createVectorStore(vectorStoreConfig);
   }
 
-  async initialize(forceRegenerate: boolean = false) {
+  async initialize(forceRegenerate: boolean = false, customSelectedLibraries?: string[]) {
     console.log(
       "重新初始化",
       this.initialized,
@@ -41,17 +41,25 @@ class VectorStoreService {
     // 加载所有图标
     // 获取用户选择的图标库，如果没有则使用默认值
     let selectedLibraries = ["lucide", "heroicons", "ant-design"];
-    const savedLibraries = localStorage.getItem("selectedIconLibraries");
-    if (savedLibraries) {
-      try {
-        selectedLibraries = JSON.parse(savedLibraries);
-      } catch (error) {
-        console.error(
-          "获取图标库设置失败，降级为默认值，请检查设置",
-          error
-        );
+    
+    // 优先使用传入的自定义配置
+    if (customSelectedLibraries && customSelectedLibraries.length > 0) {
+      selectedLibraries = customSelectedLibraries;
+    } else {
+      // 否则从localStorage读取
+      const savedLibraries = localStorage.getItem("selectedIconLibraries");
+      if (savedLibraries) {
+        try {
+          selectedLibraries = JSON.parse(savedLibraries);
+        } catch (error) {
+          console.error(
+            "获取图标库设置失败，降级为默认值，请检查设置",
+            error
+          );
+        }
       }
     }
+    console.log('selectedLibraries', selectedLibraries)
     const innerIcons = await loadIcons(selectedLibraries);
     this.icons = innerIcons;
 
@@ -254,6 +262,7 @@ class VectorStoreService {
         console.error("Failed to call search API:", error);
       }
     }
+    console.log('this.icons', this.icons)
 
     // 应用过滤器（移到 try 块外面，以便在 catch 中也能使用）
     const filteredIcons = this.icons.filter((icon) => {

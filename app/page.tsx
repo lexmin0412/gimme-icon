@@ -52,7 +52,7 @@ const HomeContent: React.FC = () => {
   // 加载图标库列表
   useEffect(() => {
     loadIconLibraries();
-  }, [showSettingsMenu]);
+  }, []);
 
   // 处理搜索查询
   const handleSearch = async (query: string) => {
@@ -154,6 +154,9 @@ const HomeContent: React.FC = () => {
       // 刷新搜索结果
       await triggerFirstSearch();
       
+      // 关闭设置弹窗
+      setShowSettingsMenu(false);
+      
       showToast('Icon libraries updated successfully!', 'success');
     } catch (error) {
       console.error('Failed to update icon libraries:', error);
@@ -174,10 +177,44 @@ const HomeContent: React.FC = () => {
       const success = await embeddingService.setModel(newModel);
       if (success) {
         setCurrentModel(newModel);
-        // 重新初始化向量存储
-        await vectorStoreService.reInitialize();
+        
+        // 检查是否需要重新生成向量
+        // 获取用户选择的图标库
+        let currentLibraries = selectedLibraries;
+        const savedLibraries = localStorage.getItem('selectedIconLibraries');
+        if (savedLibraries) {
+          currentLibraries = JSON.parse(savedLibraries);
+        }
+        
+        // 加载图标数据
+        const icons = await loadIcons(currentLibraries);
+        
+        // 生成图标数据的哈希值
+        const iconsJsonString = JSON.stringify(icons);
+        const iconsHash = generateHash(iconsJsonString);
+        
+        // 生成向量存储名称（与vectorStoreService中保持一致）
+        const vectorStoreName = `gimme_icons_${iconsHash}_${newModel.replace(/\//g, '_')}`;
+        
+        // 检查IndexedDB中是否已有向量数据
+        const storedVectors = await localforage.getItem(vectorStoreName);
+        
+        if (storedVectors && Array.isArray(storedVectors) && storedVectors.length > 0) {
+          // 如果有缓存，直接初始化而不强制重新生成
+          console.log(`Found cached vectors in IndexedDB: ${vectorStoreName}`);
+          await vectorStoreService.initialize(false);
+        } else {
+          // 如果没有缓存，重新初始化并强制生成向量
+          console.log(`No cached vectors found in IndexedDB, regenerating...`);
+          await vectorStoreService.reInitialize();
+        }
+        
         // 刷新搜索结果
         await triggerFirstSearch();
+        
+        // 关闭设置弹窗
+        setShowSettingsMenu(false);
+        
         showToast('Model switched successfully!', 'success');
       } else {
         showToast('Failed to switch model. Falling back to text search.', 'error');
@@ -424,8 +461,20 @@ const Home: React.FC = () => {
       try {
         // 初始化嵌入服务
         await embeddingService.initialize();
-        // 初始化向量存储
-        await vectorStoreService.initialize();
+        
+        // 读取保存的图标库配置
+        let selectedLibraries = [];
+        const savedLibraries = localStorage.getItem('selectedIconLibraries');
+        if (savedLibraries) {
+          try {
+            selectedLibraries = JSON.parse(savedLibraries);
+          } catch (error) {
+            console.error('Error parsing saved libraries:', error);
+          }
+        }
+        
+        // 初始化向量存储，传入用户保存的图标库配置
+        await vectorStoreService.initialize(false, selectedLibraries);
       } catch (error) {
         console.error("Failed to initialize app:", error);
       } finally {
