@@ -169,9 +169,6 @@ const HomeContent: React.FC = () => {
 
   // 处理模型切换
   const handleModelChange = async (newModel: ModelId) => {
-    // 如果当前模型已经是选中的模型，则不执行任何操作
-    if (currentModel === newModel) return;
-    
     setIsChangingModel(true);
 
     try {

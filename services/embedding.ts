@@ -213,11 +213,6 @@ class EmbeddingService {
       return false;
     }
 
-    // 如果模型没有改变，直接返回
-    if (this.currentModelId === modelId) {
-      return true;
-    }
-
     // 重置状态
     this.currentModelId = modelId;
     this.initialized = false;
