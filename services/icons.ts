@@ -1,4 +1,19 @@
 /**
+ * 获取所有可用的图标库列表
+ */
+export const getIconLibraries = async () => {
+  const response = await fetch('https://api.iconify.design/collections');
+  const data = await response.json();
+  return Object.entries(data).map(([prefix, info]) => ({
+    prefix,
+    name: (info as any).name,
+    total: (info as any).total,
+    author: (info as any).author.name,
+    license: (info as any).license.title
+  }));
+};
+
+/**
  * 动态获取指定图标库的所有图标
  */
 export const loadIcons = async (libNames: string[]) => {

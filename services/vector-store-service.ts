@@ -39,7 +39,20 @@ class VectorStoreService {
     if (this.initialized && !forceRegenerate) return;
 
     // 加载所有图标
-    const innerIcons = await loadIcons(["lucide", "heroicons", "ant-design"]);
+    // 获取用户选择的图标库，如果没有则使用默认值
+    let selectedLibraries = ["lucide", "heroicons", "ant-design"];
+    const savedLibraries = localStorage.getItem("selectedIconLibraries");
+    if (savedLibraries) {
+      try {
+        selectedLibraries = JSON.parse(savedLibraries);
+      } catch (error) {
+        console.error(
+          "获取图标库设置失败，降级为默认值，请检查设置",
+          error
+        );
+      }
+    }
+    const innerIcons = await loadIcons(selectedLibraries);
     this.icons = innerIcons;
 
     try {

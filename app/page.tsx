@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import SearchBar from "./components/SearchBar";
 import IconGrid from "./components/IconGrid";
-import FilterPanel from "./components/FilterPanel";
 import IconPreview from "./components/IconPreview";
 import { vectorStoreService } from "../services/vector-store-service";
 import type { SearchResult, FilterOptions } from "../types/icon";
@@ -11,15 +10,27 @@ import { embeddingService } from "../services/embedding";
 import { APP_NAME, APP_DESCRIPTION } from "../constants";
 import { AVAILABLE_MODELS, ModelId } from "../services/embedding";
 import { useToast } from "./components/ToastProvider";
+import { getIconLibraries, loadIcons } from "../services/icons";
+import localforage from "localforage";
+import { generateHash } from "../utils/hash";
 
 // 创建一个使用SearchContext的内部组件
 const HomeContent: React.FC = () => {
   const context = useContext(SearchContext);
-  const [isLoading, setIsLoading] = useState(true);
+  const [_isLoading, setIsLoading] = useState(true);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [currentModel, setCurrentModel] = useState<ModelId>(AVAILABLE_MODELS.MULTILINGUAL);
   const [isChangingModel, setIsChangingModel] = useState(false);
   const { showToast } = useToast();
+  
+  // 图标库相关状态
+  const [iconLibraries, setIconLibraries] = useState<{prefix: string; name: string; total: number; author: string; license: string}[]>([]);
+  const [selectedLibraries, setSelectedLibraries] = useState<string[]>(['lucide', 'heroicons', 'ant-design']);
+  const [isLoadingLibraries, setIsLoadingLibraries] = useState(false);
+  const [isUpdatingLibraries, setIsUpdatingLibraries] = useState(false);
+  
+  // 选项卡状态
+  const [activeTab, setActiveTab] = useState<'vectorModel' | 'iconLibraries'>('vectorModel');
 
   const triggerFirstSearch = async () => {
     // 初始搜索（空查询，返回所有图标）
@@ -37,6 +48,11 @@ const HomeContent: React.FC = () => {
     const model = embeddingService.getCurrentModel();
     setCurrentModel(model);
   }, []);
+
+  // 加载图标库列表
+  useEffect(() => {
+    loadIconLibraries();
+  }, [showSettingsMenu]);
 
   // 处理搜索查询
   const handleSearch = async (query: string) => {
@@ -80,10 +96,79 @@ const HomeContent: React.FC = () => {
     context?.setSelectedIcon(null);
   };
 
+  // 加载图标库列表
+  const loadIconLibraries = async () => {
+    try {
+      setIsLoadingLibraries(true);
+      const libraries = await getIconLibraries();
+      setIconLibraries(libraries);
+      
+      // 从本地存储获取用户之前选择的图标库
+      const savedLibraries = localStorage.getItem('selectedIconLibraries');
+      if (savedLibraries) {
+        setSelectedLibraries(JSON.parse(savedLibraries));
+      }
+    } catch (error) {
+      console.error('Failed to load icon libraries:', error);
+      showToast('Failed to load icon libraries', 'error');
+    } finally {
+      setIsLoadingLibraries(false);
+    }
+  };
+
+  // 更新选中的图标库
+  const handleUpdateLibraries = async () => {
+    try {
+      setIsUpdatingLibraries(true);
+      
+      // 保存用户选择的图标库到本地存储
+      localStorage.setItem('selectedIconLibraries', JSON.stringify(selectedLibraries));
+      
+      // 检查是否需要重新生成向量
+      // 首先加载图标数据
+      const icons = await loadIcons(selectedLibraries);
+      
+      // 生成图标数据的哈希值
+      const iconsJsonString = JSON.stringify(icons);
+      const iconsHash = generateHash(iconsJsonString);
+      
+      // 获取当前模型ID
+      const currentModel = embeddingService.getCurrentModel();
+      
+      // 生成向量存储名称（与vectorStoreService中保持一致）
+      const vectorStoreName = `gimme_icons_${iconsHash}_${currentModel.replace(/\//g, '_')}`;
+      
+      // 检查IndexedDB中是否已有向量数据
+      const storedVectors = await localforage.getItem(vectorStoreName);
+      
+      if (storedVectors && Array.isArray(storedVectors) && storedVectors.length > 0) {
+        // 如果有缓存，直接初始化而不强制重新生成
+        console.log(`Found cached vectors in IndexedDB: ${vectorStoreName}`);
+        await vectorStoreService.initialize(false);
+      } else {
+        // 如果没有缓存，重新初始化并强制生成向量
+        console.log(`No cached vectors found in IndexedDB, regenerating...`);
+        await vectorStoreService.reInitialize();
+      }
+      
+      // 刷新搜索结果
+      await triggerFirstSearch();
+      
+      showToast('Icon libraries updated successfully!', 'success');
+    } catch (error) {
+      console.error('Failed to update icon libraries:', error);
+      showToast('Failed to update icon libraries', 'error');
+    } finally {
+      setIsUpdatingLibraries(false);
+    }
+  };
+
   // 处理模型切换
   const handleModelChange = async (newModel: ModelId) => {
+    // 如果当前模型已经是选中的模型，则不执行任何操作
+    if (currentModel === newModel) return;
+    
     setIsChangingModel(true);
-    setShowSettingsMenu(false);
 
     try {
       const success = await embeddingService.setModel(newModel);
@@ -114,9 +199,6 @@ const HomeContent: React.FC = () => {
     );
   }
 
-  // 解构context
-  const { availableFilters } = context;
-
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto px-4 py-8">
@@ -136,42 +218,154 @@ const HomeContent: React.FC = () => {
               </svg>
             </button>
 
-            {/* 模型选择下拉菜单 */}
+            {/* 设置菜单 */}
             {showSettingsMenu && (
-              <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
-                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-4 py-2">Vector Model</h3>
-                <button
-                  onClick={() => handleModelChange(AVAILABLE_MODELS.ENGLISH)}
-                  className={`block w-full text-left px-4 py-2 text-sm ${currentModel === AVAILABLE_MODELS.ENGLISH ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                  disabled={isChangingModel}
-                >
-                  {currentModel === AVAILABLE_MODELS.ENGLISH && (
-                    <svg className="inline-block w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                  English (all-MiniLM-L6-v2)
-                </button>
-                <button
-                  onClick={() => handleModelChange(AVAILABLE_MODELS.MULTILINGUAL)}
-                  className={`block w-full text-left px-4 py-2 text-sm ${currentModel === AVAILABLE_MODELS.MULTILINGUAL ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-                  disabled={isChangingModel}
-                >
-                  {currentModel === AVAILABLE_MODELS.MULTILINGUAL && (
-                    <svg className="inline-block w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  )}
-                  Multilingual (MiniLM-L12-v2)
-                </button>
-                {isChangingModel && (
-                  <div className="px-4 py-2 text-xs text-gray-500 dark:text-gray-400">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                      <span>Loading model...</span>
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[800px] max-w-3xl h-[70vh] overflow-hidden flex flex-col">
+                  {/* 标题栏 */}
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Settings</h2>
+                    <button
+                      onClick={() => setShowSettingsMenu(false)}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  {/* 内容区域 - 左右分栏 */}
+                  <div className="flex flex-1 overflow-hidden">
+                    {/* 左侧选项卡 */}
+                    <div className="w-48 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                      <button
+                        onClick={() => setActiveTab('vectorModel')}
+                        className={`block w-full text-left px-4 py-3 text-sm ${activeTab === 'vectorModel' ? 'bg-white dark:bg-gray-800 border-l-4 border-blue-500' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                      >
+                        Vector Model
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('iconLibraries')}
+                        className={`block w-full text-left px-4 py-3 text-sm ${activeTab === 'iconLibraries' ? 'bg-white dark:bg-gray-800 border-l-4 border-blue-500' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                      >
+                        Icon Libraries
+                      </button>
+                    </div>
+                    
+                    {/* 右侧内容 */}
+                    <div className="flex-1 overflow-y-auto p-6">
+                      {/* 向量模型选项卡内容 */}
+                      {activeTab === 'vectorModel' && (
+                        <div>
+                          <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4">Vector Model</h3>
+                          <div className="space-y-3">
+                            <button
+                              onClick={() => setCurrentModel(AVAILABLE_MODELS.ENGLISH)}
+                              className={`block w-full text-left px-4 py-2 text-sm ${currentModel === AVAILABLE_MODELS.ENGLISH ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                              disabled={isChangingModel}
+                            >
+                              {currentModel === AVAILABLE_MODELS.ENGLISH && (
+                                <svg className="inline-block w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                              English (all-MiniLM-L6-v2)
+                            </button>
+                            <button
+                              onClick={() => setCurrentModel(AVAILABLE_MODELS.MULTILINGUAL)}
+                              className={`block w-full text-left px-4 py-2 text-sm ${currentModel === AVAILABLE_MODELS.MULTILINGUAL ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                              disabled={isChangingModel}
+                            >
+                              {currentModel === AVAILABLE_MODELS.MULTILINGUAL && (
+                                <svg className="inline-block w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                              Multilingual (MiniLM-L12-v2)
+                            </button>
+                          </div>
+                          {isChangingModel && (
+                            <div className="mt-4 flex items-center gap-2">
+                              <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">Loading model...</span>
+                            </div>
+                          )}
+                          <div className="mt-6 flex justify-end">
+                            <button
+                              onClick={() => handleModelChange(currentModel)}
+                              className="px-4 py-2 text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                              disabled={isChangingModel}
+                            >
+                              Save Model
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {/* 图标库选项卡内容 */}
+                      {activeTab === 'iconLibraries' && (
+                        <div>
+                          <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4">Icon Libraries</h3>
+                          <div className="space-y-4">
+                            {isLoadingLibraries ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                <span className="text-xs text-gray-500 dark:text-gray-400">Loading libraries...</span>
+                              </div>
+                            ) : (
+                              <div className="max-h-[400px] overflow-y-auto pr-2">
+                                <div className="grid grid-cols-2 gap-3">
+                                  {iconLibraries.map((lib) => (
+                                    <div key={lib.prefix} className="flex items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        id={`lib-${lib.prefix}`}
+                                        checked={selectedLibraries.includes(lib.prefix)}
+                                        onChange={(e) => {
+                                          if (e.target.checked) {
+                                            setSelectedLibraries([...selectedLibraries, lib.prefix]);
+                                          } else {
+                                            setSelectedLibraries(selectedLibraries.filter((prefix) => prefix !== lib.prefix));
+                                          }
+                                        }}
+                                        disabled={isUpdatingLibraries}
+                                        className="rounded text-blue-600 dark:text-blue-400 focus:ring-blue-500"
+                                      />
+                                      <label
+                                        htmlFor={`lib-${lib.prefix}`}
+                                        className="text-xs text-gray-700 dark:text-gray-300 cursor-pointer flex-1 truncate"
+                                      >
+                                        <span className="font-medium">{lib.name}</span>
+                                        <span className="text-gray-500 dark:text-gray-500 ml-1">({lib.total} icons)</span>
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            <div className="pt-4 flex justify-end">
+                              <button
+                                onClick={handleUpdateLibraries}
+                                className={`px-4 py-2 text-sm font-medium ${selectedLibraries.length === 0 ? 'bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700'}`}
+                                disabled={isUpdatingLibraries || selectedLibraries.length === 0}
+                              >
+                                {isUpdatingLibraries ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    <span>Updating...</span>
+                                  </div>
+                                ) : (
+                                  'Save Libraries'
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
+                </div>
               </div>
             )}
           </div>
