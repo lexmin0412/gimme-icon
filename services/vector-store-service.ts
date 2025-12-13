@@ -100,61 +100,54 @@ class VectorStoreService {
 
       // 只在非降级模式下为图标生成向量
       if (!embeddingService.isUsingFallback()) {
-        // 总是生成向量，因为可能有新的图标需要添加向量数据
-        // 但在生成每个向量前会检查是否已存在
-        const shouldGenerateVectors = true;
+        // 检查是否需要生成向量
+        let shouldGenerateVectors = false;
+        
+        // 使用统一的向量存储命名函数
+        const vectorStoreName = getVectorStoreName(embeddingService.getCurrentModel());
+        let vectorItems: VectorStoreItem[] = [];
+
+        // 检查IndexedDB中是否已有向量数据
+        if (isClient && !forceRegenerate) {
+          try {
+            console.log(
+              `Checking IndexedDB for vector store: ${vectorStoreName}`
+            );
+            const storedVectors = await localforage.getItem<
+              VectorStoreItem[]
+            >(vectorStoreName);
+
+            if (storedVectors && storedVectors.length > 0) {
+              console.log(
+                `Found ${storedVectors.length} vectors in IndexedDB, reusing them completely`
+              );
+              // 如果已经有向量数据，完全跳过向量生成逻辑
+              shouldGenerateVectors = false;
+              vectorItems = storedVectors;
+            } else {
+              console.log(
+                "No vectors found in IndexedDB, generating new ones"
+              );
+              shouldGenerateVectors = true;
+            }
+          } catch (error) {
+            console.error("Error accessing IndexedDB:", error);
+            shouldGenerateVectors = true;
+          }
+        } else {
+          console.log(
+            "Force regenerate or not client, generating vectors"
+          );
+          shouldGenerateVectors = true;
+        }
 
         if (shouldGenerateVectors) {
-          // 使用统一的向量存储命名函数
-          const vectorStoreName = getVectorStoreName(embeddingService.getCurrentModel());
-          let vectorItems: VectorStoreItem[] = [];
-
-          // 检查IndexedDB中是否已有向量数据
-          if (isClient && !forceRegenerate) {
-            try {
-              console.log(
-                `Checking IndexedDB for vector store: ${vectorStoreName}`
-              );
-              const storedVectors = await localforage.getItem<
-                VectorStoreItem[]
-              >(vectorStoreName);
-
-              if (storedVectors && storedVectors.length > 0) {
-                console.log(
-                  `Found ${storedVectors.length} vectors in IndexedDB, reusing them`
-                );
-                vectorItems = storedVectors;
-              } else {
-                console.log(
-                  "No vectors found in IndexedDB, generating new ones"
-                );
-              }
-            } catch (error) {
-              console.error("Error accessing IndexedDB:", error);
-            }
-          } else {
-            console.log(
-              "Force regenerate or not client, skipping IndexedDB check"
-            );
-          }
-
-          // 无论是否从IndexedDB获取到向量，都需要检查每个图标是否已存在于存储中
-          console.log("Generating embeddings for new icons...");
-          
           // 为每个图标生成向量，添加超时处理
           const generateEmbeddingsPromise = async () => {
             console.time("生成所有图标向量耗时");
 
             const items: VectorStoreItem[] = [];
             for (const icon of this.icons) {
-              // 检查存储中是否已存在当前图标的向量
-              const hasExistingVector = await this.vectorStore.hasVector(icon.id);
-              console.log('hasExistingVector', icon.id, hasExistingVector)
-              if (hasExistingVector) {
-                console.log(`Skipping existing vector for icon: ${icon.id}`);
-                continue;
-              }
-              
               // 生成图标描述 优化搜索效果
               const document = generateDescriptionForIcon(
                 icon.name,
@@ -189,36 +182,24 @@ class VectorStoreService {
 
           console.log("generatedVectorItems", vectorItems);
 
-          // 将生成的向量存储到IndexedDB中（只存储新生成的向量）
+          // 将生成的向量存储到IndexedDB中
           if (isClient && vectorItems.length > 0) {
             try {
               console.log(
                 `Storing ${vectorItems.length} vectors in IndexedDB: ${vectorStoreName}`
               );
-              
-              // 先获取已有的向量
-              const existingVectors = await localforage.getItem<VectorStoreItem[]>(vectorStoreName) || [];
-              
-              // 合并新生成的向量和已有的向量（通过id去重）
-              const allVectors = [...existingVectors];
-              const existingIds = new Set(allVectors.map(item => item.id));
-              
-              for (const newVector of vectorItems) {
-                if (!existingIds.has(newVector.id)) {
-                  allVectors.push(newVector);
-                  existingIds.add(newVector.id);
-                }
-              }
-              
-              // 保存合并后的向量
-              await localforage.setItem(vectorStoreName, allVectors);
+              await localforage.setItem(vectorStoreName, vectorItems);
               console.log("Vectors stored in IndexedDB successfully");
             } catch (error) {
               console.error("Error storing vectors in IndexedDB:", error);
             }
           }
+        } else {
+          console.log(`Using existing vectors from IndexedDB, skipping generation`);
+        }
 
-          // 批量添加向量，添加超时处理
+        // 批量添加向量，添加超时处理
+        if (vectorItems.length > 0) {
           await withTimeout(
             () => this.vectorStore.addVectors(vectorItems),
             timeoutMs,
@@ -227,7 +208,7 @@ class VectorStoreService {
 
           console.log(`Added ${vectorItems.length} vectors to store`);
         } else {
-          console.log(`Using existing vectors from store`);
+          console.log(`No vectors to add to store`);
         }
       } else {
         console.log("Using fallback mode, skipping embedding generation");

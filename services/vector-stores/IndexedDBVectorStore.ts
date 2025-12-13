@@ -37,10 +37,17 @@ export class IndexedDBVectorStore implements IVectorStore {
     try {
       // 获取所有现有向量
       const vectors = await this.getAllVectors();
-      // 添加新向量
-      vectors.set(item.id, item);
+      // 检查是否已存在相同id的向量
+      const existingIndex = vectors.findIndex(v => v.id === item.id);
+      if (existingIndex >= 0) {
+        // 如果存在，更新现有向量
+        vectors[existingIndex] = item;
+      } else {
+        // 如果不存在，添加新向量
+        vectors.push(item);
+      }
       // 保存回IndexedDB
-      await localforage.setItem(this.storeName, Array.from(vectors.entries()));
+      await localforage.setItem(this.storeName, vectors);
     } catch (error) {
       console.error('Failed to add vector:', error);
       throw error;
@@ -55,12 +62,23 @@ export class IndexedDBVectorStore implements IVectorStore {
     try {
       // 获取所有现有向量
       const vectors = await this.getAllVectors();
+      // 创建一个id到索引的映射，用于快速查找
+      const idIndexMap = new Map(vectors.map((vector, index) => [vector.id, index]));
+      
       // 批量添加新向量
       items.forEach(item => {
-        vectors.set(item.id, item);
+        const existingIndex = idIndexMap.get(item.id);
+        if (existingIndex !== undefined) {
+          // 如果存在，更新现有向量
+          vectors[existingIndex] = item;
+        } else {
+          // 如果不存在，添加新向量并更新映射
+          vectors.push(item);
+          idIndexMap.set(item.id, vectors.length - 1);
+        }
       });
       // 保存回IndexedDB
-      await localforage.setItem(this.storeName, Array.from(vectors.entries()));
+      await localforage.setItem(this.storeName, vectors);
     } catch (error) {
       console.error('Failed to add vectors:', error);
       throw error;
@@ -74,7 +92,7 @@ export class IndexedDBVectorStore implements IVectorStore {
 
     try {
       const vectors = await this.getAllVectors();
-      return vectors.get(id);
+      return vectors.find(vector => vector.id === id);
     } catch (error) {
       console.error('Failed to get vector:', error);
       return undefined;
@@ -88,7 +106,8 @@ export class IndexedDBVectorStore implements IVectorStore {
 
     try {
       const vectors = await this.getAllVectors();
-      return ids.map(id => vectors.get(id)).filter((item): item is VectorStoreItem => item !== undefined);
+      const idSet = new Set(ids);
+      return vectors.filter(vector => idSet.has(vector.id));
     } catch (error) {
       console.error('Failed to get vectors:', error);
       return [];
@@ -115,7 +134,7 @@ export class IndexedDBVectorStore implements IVectorStore {
 
       // 获取所有向量
       const vectors = await this.getAllVectors();
-      const vectorArray = Array.from(vectors.values());
+      const vectorArray = vectors;
 
       // 过滤向量（如果有过滤条件）
       const filteredVectors = vectorArray.filter(vector => {
@@ -155,8 +174,8 @@ export class IndexedDBVectorStore implements IVectorStore {
 
     try {
       const vectors = await this.getAllVectors();
-      vectors.delete(id);
-      await localforage.setItem(this.storeName, Array.from(vectors.entries()));
+      const updatedVectors = vectors.filter(vector => vector.id !== id);
+      await localforage.setItem(this.storeName, updatedVectors);
     } catch (error) {
       console.error('Failed to delete vector:', error);
       throw error;
@@ -183,7 +202,7 @@ export class IndexedDBVectorStore implements IVectorStore {
 
     try {
       const vectors = await this.getAllVectors();
-      return vectors.has(id);
+      return vectors.some(vector => vector.id === id);
     } catch (error) {
       console.error('Failed to check vector existence:', error);
       return false;
@@ -197,7 +216,7 @@ export class IndexedDBVectorStore implements IVectorStore {
 
     try {
       const vectors = await this.getAllVectors();
-      return vectors.size;
+      return vectors.length;
     } catch (error) {
       console.error('Failed to get vector count:', error);
       return 0;
@@ -215,9 +234,9 @@ export class IndexedDBVectorStore implements IVectorStore {
 
     try {
       const vectors = await this.getAllVectors();
-      const existingVector = vectors.get(id);
+      const existingIndex = vectors.findIndex(vector => vector.id === id);
       
-      if (!existingVector) {
+      if (existingIndex === -1) {
         throw new Error(`Vector with id ${id} not found`);
       }
 
@@ -225,11 +244,11 @@ export class IndexedDBVectorStore implements IVectorStore {
       const updatedVector: VectorStoreItem = {
         id,
         embedding: newEmbedding,
-        metadata: metadata || existingVector.metadata
+        metadata: metadata || vectors[existingIndex].metadata
       };
 
-      vectors.set(id, updatedVector);
-      await localforage.setItem(this.storeName, Array.from(vectors.entries()));
+      vectors[existingIndex] = updatedVector;
+      await localforage.setItem(this.storeName, vectors);
     } catch (error) {
       console.error('Failed to update vector:', error);
       throw error;
@@ -239,13 +258,23 @@ export class IndexedDBVectorStore implements IVectorStore {
   /**
    * 辅助方法：获取所有向量
    */
-  private async getAllVectors(): Promise<Map<string, VectorStoreItem>> {
+  private async getAllVectors(): Promise<VectorStoreItem[]> {
     try {
-      const data = await localforage.getItem<[string, VectorStoreItem][]>(this.storeName);
-      return new Map(data || []);
+      const data = await localforage.getItem(this.storeName);
+      
+      // 处理旧的Map格式数据 [string, VectorStoreItem][]
+      if (data && Array.isArray(data) && data.length > 0) {
+        // 检查是否是旧的Map格式
+        if (Array.isArray(data[0]) && data[0].length === 2 && typeof data[0][0] === 'string') {
+          console.log('Converting old Map format data to new object array format');
+          return (data as [string, VectorStoreItem][]).map(([id, item]) => item);
+        }
+      }
+      
+      return (data as VectorStoreItem[]) || [];
     } catch (error) {
       console.error('Failed to get all vectors:', error);
-      return new Map();
+      return [];
     }
   }
 }
