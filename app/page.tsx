@@ -3,7 +3,7 @@ import React, { useState, useEffect, useContext } from "react";
 import SearchBar from "./components/SearchBar";
 import IconGrid from "./components/IconGrid";
 import IconPreview from "./components/IconPreview";
-import { vectorStoreService } from "../services/vector-store-service";
+import { vectorStoreService, getVectorStoreName } from "../services/vector-store-service";
 import type { SearchResult, FilterOptions } from "../types/icon";
 import { SearchProvider, SearchContext } from "../context/SearchContext";
 import { embeddingService } from "../services/embedding";
@@ -135,8 +135,8 @@ const HomeContent: React.FC = () => {
       // 获取当前模型ID
       const currentModel = embeddingService.getCurrentModel();
       
-      // 生成向量存储名称（与vectorStoreService中保持一致）
-      const vectorStoreName = `gimme_icons_${iconsHash}_${currentModel.replace(/\//g, '_')}`;
+      // 使用统一的向量存储命名函数
+      const vectorStoreName = getVectorStoreName(currentModel);
       
       // 检查IndexedDB中是否已有向量数据
       const storedVectors = await localforage.getItem(vectorStoreName);
@@ -193,8 +193,8 @@ const HomeContent: React.FC = () => {
         const iconsJsonString = JSON.stringify(icons);
         const iconsHash = generateHash(iconsJsonString);
         
-        // 生成向量存储名称（与vectorStoreService中保持一致）
-        const vectorStoreName = `gimme_icons_${iconsHash}_${newModel.replace(/\//g, '_')}`;
+        // 使用统一的向量存储命名函数
+        const vectorStoreName = getVectorStoreName(newModel);
         
         // 检查IndexedDB中是否已有向量数据
         const storedVectors = await localforage.getItem(vectorStoreName);

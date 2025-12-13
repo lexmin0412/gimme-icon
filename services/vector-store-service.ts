@@ -11,9 +11,19 @@ import {
 import localforage from "localforage";
 import { generateHash } from "../utils/hash";
 import { withTimeout } from "../utils";
+import { loadIcons } from "./icons";
 
 import { generateDescriptionForIcon } from "@/utils";
-import { loadIcons } from "./icons";
+
+/**
+ * 生成统一的向量存储名称
+ * @param modelId 当前模型ID
+ * @returns 格式化的向量存储名称
+ */
+export const getVectorStoreName = (modelId: string): string => {
+  // 替换模型ID中的斜杠为下划线，确保命名在所有存储系统中有效
+  return `gimme_icons_${modelId.replace(/\//g, "_")}`;
+};
 
 // 检测是否在浏览器环境（客户端）
 const isClient = typeof window !== "undefined";
@@ -99,12 +109,8 @@ class VectorStoreService {
         }
 
         if (shouldGenerateVectors) {
-          // 生成icons.json内容的哈希值
-          const iconsJsonString = JSON.stringify(this.icons);
-          const iconsHash = generateHash(iconsJsonString);
-          const vectorStoreName = `gimme_icons_${iconsHash}_${embeddingService
-            .getCurrentModel()
-            .replace(/\//g, "_")}`;
+          // 使用统一的向量存储命名函数
+          const vectorStoreName = getVectorStoreName(embeddingService.getCurrentModel());
           let vectorItems: VectorStoreItem[] = [];
 
           // 检查IndexedDB中是否已有向量数据
