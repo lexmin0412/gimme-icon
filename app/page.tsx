@@ -139,17 +139,18 @@ const HomeContent: React.FC = () => {
       const vectorStoreName = getVectorStoreName(currentModel);
       
       // 检查IndexedDB中是否已有向量数据
-      const storedVectors = await localforage.getItem(vectorStoreName);
+      // const storedVectors = await localforage.getItem(vectorStoreName);
+      await vectorStoreService.reInitialize();
       
-      if (storedVectors && Array.isArray(storedVectors) && storedVectors.length > 0) {
-        // 如果有缓存，直接初始化而不强制重新生成
-        console.log(`Found cached vectors in IndexedDB: ${vectorStoreName}`);
-        await vectorStoreService.initialize(false);
-      } else {
-        // 如果没有缓存，重新初始化并强制生成向量
-        console.log(`No cached vectors found in IndexedDB, regenerating...`);
-        await vectorStoreService.reInitialize();
-      }
+      // if (storedVectors && Array.isArray(storedVectors) && storedVectors.length > 0) {
+      //   // 如果有缓存，直接初始化而不强制重新生成
+      //   console.log(`Found cached vectors in IndexedDB: ${vectorStoreName}`);
+      //   await vectorStoreService.initialize(false);
+      // } else {
+      //   // 如果没有缓存，重新初始化并强制生成向量
+      //   console.log(`No cached vectors found in IndexedDB, regenerating...`);
+      //   await vectorStoreService.reInitialize();
+      // }
       
       // 刷新搜索结果
       await triggerFirstSearch();

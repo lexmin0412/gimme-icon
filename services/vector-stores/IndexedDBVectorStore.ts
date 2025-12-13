@@ -1,0 +1,251 @@
+import type { IVectorStore, VectorStoreItem } from './IVectorStore';
+import localforage from 'localforage';
+
+// 配置localforage
+localforage.config({
+  name: 'gimme-icons',
+  storeName: 'vector-store',
+  description: '存储图标向量数据的IndexedDB数据库'
+});
+
+export class IndexedDBVectorStore implements IVectorStore {
+  private initialized: boolean = false;
+  private storeName: string;
+
+  constructor(storeName: string = 'default-vectors') {
+    this.storeName = storeName;
+  }
+
+  async initialize(): Promise<void> {
+    if (this.initialized) return;
+    
+    // 检查localforage是否可用（浏览器环境）
+    if (typeof window === 'undefined') {
+      console.warn('IndexedDBVectorStore is not supported in non-browser environment');
+      return;
+    }
+    
+    this.initialized = true;
+    console.log('IndexedDBVectorStore initialized successfully');
+  }
+
+  async addVector(item: VectorStoreItem): Promise<void> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    try {
+      // 获取所有现有向量
+      const vectors = await this.getAllVectors();
+      // 添加新向量
+      vectors.set(item.id, item);
+      // 保存回IndexedDB
+      await localforage.setItem(this.storeName, Array.from(vectors.entries()));
+    } catch (error) {
+      console.error('Failed to add vector:', error);
+      throw error;
+    }
+  }
+
+  async addVectors(items: VectorStoreItem[]): Promise<void> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    try {
+      // 获取所有现有向量
+      const vectors = await this.getAllVectors();
+      // 批量添加新向量
+      items.forEach(item => {
+        vectors.set(item.id, item);
+      });
+      // 保存回IndexedDB
+      await localforage.setItem(this.storeName, Array.from(vectors.entries()));
+    } catch (error) {
+      console.error('Failed to add vectors:', error);
+      throw error;
+    }
+  }
+
+  async getVector(id: string): Promise<VectorStoreItem | undefined> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    try {
+      const vectors = await this.getAllVectors();
+      return vectors.get(id);
+    } catch (error) {
+      console.error('Failed to get vector:', error);
+      return undefined;
+    }
+  }
+
+  async getVectors(ids: string[]): Promise<VectorStoreItem[]> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    try {
+      const vectors = await this.getAllVectors();
+      return ids.map(id => vectors.get(id)).filter((item): item is VectorStoreItem => item !== undefined);
+    } catch (error) {
+      console.error('Failed to get vectors:', error);
+      return [];
+    }
+  }
+
+  async searchSimilarVectors(
+    queryVector: number[],
+    limit: number,
+    filters?: Record<string, string[] | string>
+  ): Promise<{ id: string; score: number; metadata?: Record<string, string[] | string | number> }[]> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    try {
+      // 计算余弦相似度
+      const cosineSimilarity = (a: number[], b: number[]): number => {
+        const dotProduct = a.reduce((sum, ai, i) => sum + ai * b[i], 0);
+        const magnitudeA = Math.sqrt(a.reduce((sum, ai) => sum + ai * ai, 0));
+        const magnitudeB = Math.sqrt(b.reduce((sum, bi) => sum + bi * bi, 0));
+        return dotProduct / (magnitudeA * magnitudeB);
+      };
+
+      // 获取所有向量
+      const vectors = await this.getAllVectors();
+      const vectorArray = Array.from(vectors.values());
+
+      // 过滤向量（如果有过滤条件）
+      const filteredVectors = vectorArray.filter(vector => {
+        if (!filters) return true;
+        
+        // 检查所有过滤条件
+        for (const [key, value] of Object.entries(filters)) {
+          if (vector.metadata?.[key] !== value) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+
+      // 计算相似度并排序
+      const results = filteredVectors
+        .map(vector => ({
+          id: vector.id,
+          score: cosineSimilarity(queryVector, vector.embedding),
+          metadata: vector.metadata
+        }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+
+      return results;
+    } catch (error) {
+      console.error('Failed to search similar vectors:', error);
+      return [];
+    }
+  }
+
+  async deleteVector(id: string): Promise<void> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    try {
+      const vectors = await this.getAllVectors();
+      vectors.delete(id);
+      await localforage.setItem(this.storeName, Array.from(vectors.entries()));
+    } catch (error) {
+      console.error('Failed to delete vector:', error);
+      throw error;
+    }
+  }
+
+  async clear(): Promise<void> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    try {
+      await localforage.setItem(this.storeName, []);
+    } catch (error) {
+      console.error('Failed to clear vectors:', error);
+      throw error;
+    }
+  }
+
+  async hasVector(id: string): Promise<boolean> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    try {
+      const vectors = await this.getAllVectors();
+      return vectors.has(id);
+    } catch (error) {
+      console.error('Failed to check vector existence:', error);
+      return false;
+    }
+  }
+
+  async getVectorCount(): Promise<number> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    try {
+      const vectors = await this.getAllVectors();
+      return vectors.size;
+    } catch (error) {
+      console.error('Failed to get vector count:', error);
+      return 0;
+    }
+  }
+
+  async updateVector(
+    id: string,
+    newEmbedding: number[],
+    metadata?: Record<string, string[] | string | number>
+  ): Promise<void> {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    try {
+      const vectors = await this.getAllVectors();
+      const existingVector = vectors.get(id);
+      
+      if (!existingVector) {
+        throw new Error(`Vector with id ${id} not found`);
+      }
+
+      // 更新向量，保留原有metadata（如果没有提供新的metadata）
+      const updatedVector: VectorStoreItem = {
+        id,
+        embedding: newEmbedding,
+        metadata: metadata || existingVector.metadata
+      };
+
+      vectors.set(id, updatedVector);
+      await localforage.setItem(this.storeName, Array.from(vectors.entries()));
+    } catch (error) {
+      console.error('Failed to update vector:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 辅助方法：获取所有向量
+   */
+  private async getAllVectors(): Promise<Map<string, VectorStoreItem>> {
+    try {
+      const data = await localforage.getItem<[string, VectorStoreItem][]>(this.storeName);
+      return new Map(data || []);
+    } catch (error) {
+      console.error('Failed to get all vectors:', error);
+      return new Map();
+    }
+  }
+}

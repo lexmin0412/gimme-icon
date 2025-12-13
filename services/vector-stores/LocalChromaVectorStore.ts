@@ -22,7 +22,7 @@ export class LocalChromaVectorStore implements IVectorStore {
     try {
       // 检查是否在浏览器环境中
       if (typeof window !== 'undefined') {
-        throw new Error('LocalChromaVectorStore is not supported in browser environment. Please use MemoryVectorStore instead.');
+        throw new Error('LocalChromaVectorStore is not supported in browser environment. Please use IndexedDBVectorStore instead.');
       }
 
       // 动态导入ChromaDB（仅在Node.js环境可用）

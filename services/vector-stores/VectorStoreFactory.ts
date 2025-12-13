@@ -1,12 +1,13 @@
 import type { IVectorStore } from './IVectorStore';
-import { MemoryVectorStore } from './MemoryVectorStore';
+import { IndexedDBVectorStore } from './IndexedDBVectorStore';
 import { LocalChromaVectorStore } from './LocalChromaVectorStore';
 import { CloudChromaVectorStore } from './CloudChromaVectorStore';
 
-export type VectorStoreType = 'memory' | 'local-chroma' | 'cloud-chroma';
+export type VectorStoreType = 'indexed-db' | 'local-chroma' | 'cloud-chroma';
 
-export interface MemoryVectorStoreConfig {
-  type: 'memory';
+export interface IndexedDBVectorStoreConfig {
+  type: 'indexed-db';
+  storeName?: string;
 }
 
 export interface LocalChromaVectorStoreConfig {
@@ -24,7 +25,7 @@ export interface CloudChromaVectorStoreConfig {
 }
 
 export type VectorStoreConfig = 
-  | MemoryVectorStoreConfig
+  | IndexedDBVectorStoreConfig
   | LocalChromaVectorStoreConfig
   | CloudChromaVectorStoreConfig;
 
@@ -51,14 +52,14 @@ export class VectorStoreFactory {
     let vectorStore: IVectorStore;
 
     switch (config.type) {
-      case 'memory':
-        vectorStore = new MemoryVectorStore();
+      case 'indexed-db':
+        vectorStore = new IndexedDBVectorStore(config.storeName);
         break;
 
       case 'local-chroma':
         // 检查是否在浏览器环境中
         if (typeof window !== 'undefined') {
-          throw new Error('LocalChromaVectorStore is not supported in browser environment. Please use MemoryVectorStore instead.');
+          throw new Error('LocalChromaVectorStore is not supported in browser environment. Please use IndexedDBVectorStore instead.');
         }
         vectorStore = new LocalChromaVectorStore(
           config.collectionName,
@@ -69,7 +70,7 @@ export class VectorStoreFactory {
       case 'cloud-chroma':
         // 检查是否在浏览器环境中
         // if (typeof window !== 'undefined') {
-        //   throw new Error('CloudChromaVectorStore is not supported in browser environment. Please use MemoryVectorStore instead.');
+        //   throw new Error('CloudChromaVectorStore is not supported in browser environment. Please use IndexedDBVectorStore instead.');
         // }
         vectorStore = new CloudChromaVectorStore(
           config.apiKey,
@@ -133,10 +134,10 @@ export class VectorStoreFactory {
   }
 
   /**
-   * 获取默认配置的向量存储实例（内存存储）
+   * 获取默认配置的向量存储实例（IndexedDB存储）
    * @returns 默认向量存储实例
    */
   static getDefaultVectorStore(): IVectorStore {
-    return this.createVectorStore({ type: 'memory' });
+    return this.createVectorStore({ type: 'indexed-db' });
   }
 }

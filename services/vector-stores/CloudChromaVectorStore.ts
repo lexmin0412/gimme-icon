@@ -39,7 +39,7 @@ export class CloudChromaVectorStore implements IVectorStore {
       // 检查是否在浏览器环境中
       // if (typeof window !== "undefined") {
       //   throw new Error(
-      //     "CloudChromaVectorStore is not supported in browser environment. Please use MemoryVectorStore instead."
+      //     "CloudChromaVectorStore is not supported in browser environment. Please use IndexedDBVectorStore instead."
       //   );
       // }
 
