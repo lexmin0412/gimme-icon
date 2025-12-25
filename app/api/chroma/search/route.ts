@@ -5,7 +5,7 @@ import { ChromaCollection } from '@/libs/chroma';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { queryEmbedding, limit, collectionName } = body;
+    const { queryEmbedding, limit } = body;
     
     if (!queryEmbedding || !Array.isArray(queryEmbedding)) {
       return NextResponse.json(
@@ -15,9 +15,7 @@ export async function POST(request: Request) {
     }
     
     // 使用全局集合实例
-    const collection = new ChromaCollection(
-      collectionName || 'Gimme-icons'
-    );
+    const collection = new ChromaCollection();
     
     // 执行向量搜索
     const searchResults = await collection.query({

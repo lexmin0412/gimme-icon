@@ -68,9 +68,7 @@ export const getVectorStore = (
       break;
 
     case 'cloud-chroma':
-      vectorStore = new CloudChromaVectorStore(
-        config.collectionName
-      );
+      vectorStore = new CloudChromaVectorStore();
       break;
 
     default:

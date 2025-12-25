@@ -5,13 +5,12 @@ import type { Icon } from '@/types/icon';
 type RefreshEmbeddingRequest = {
   icon: Icon;
   embedding: number[];
-  collectionName?: string;
 };
 
 export async function POST(request: Request) {
   try {
     const body: RefreshEmbeddingRequest = await request.json();
-    const { icon, embedding, collectionName } = body;
+    const { icon, embedding } = body;
 
     if (!icon || !icon.id || !embedding || !Array.isArray(embedding)) {
       return NextResponse.json(
@@ -22,9 +21,7 @@ export async function POST(request: Request) {
 
     try {
       // Use ChromaCollection directly
-      const collection = new ChromaCollection(
-        collectionName || 'Gimme-icons'
-      );
+      const collection = new ChromaCollection();
       
       // Update vector in Chroma
       await collection.upsert({

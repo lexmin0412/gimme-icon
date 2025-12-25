@@ -212,14 +212,12 @@ const HomeContent: React.FC = () => {
         case "local-chroma":
           config = { 
             type: "local-chroma",
-            collectionName: "Gimme-icons",
             persistDirectory: "./chromadb_data"
           };
           break;
         case "cloud-chroma":
           config = { 
             type: "cloud-chroma",
-            collectionName: "Gimme-icons"
           };
           break;
         default:
@@ -815,14 +813,12 @@ const Home: React.FC = () => {
             case "local-chroma":
               config = { 
                 type: "local-chroma",
-                collectionName: "Gimme-icons",
                 persistDirectory: "./chromadb_data"
               };
               break;
             case "cloud-chroma":
               config = { 
-                type: "cloud-chroma",
-                collectionName: "Gimme-icons"
+                type: "cloud-chroma"
               };
               break;
             default:

@@ -4,7 +4,7 @@ import { ChromaCollection } from '@/libs/chroma';
 // 处理添加向量的 API 路由
 export async function POST(request: Request) {
   try {
-    const { items, collectionName } = await request.json();
+    const { items } = await request.json();
     
     if (!items || !Array.isArray(items)) {
       return NextResponse.json(
@@ -14,9 +14,7 @@ export async function POST(request: Request) {
     }
     
     // 使用全局集合实例
-    const collection = new ChromaCollection(
-      collectionName || 'Gimme-icons'
-    );
+    const collection = new ChromaCollection();
     
     // 准备数据
     const ids = items.map((item) => item.id);

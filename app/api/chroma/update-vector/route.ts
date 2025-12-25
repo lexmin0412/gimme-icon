@@ -4,7 +4,7 @@ import { ChromaCollection } from '@/libs/chroma';
 // 处理更新向量的 API 路由
 export async function POST(request: Request) {
   try {
-    const { id, embedding, metadata, collectionName } = await request.json();
+    const { id, embedding, metadata } = await request.json();
     
     if (!id || !embedding || !Array.isArray(embedding)) {
       return NextResponse.json(
@@ -14,9 +14,7 @@ export async function POST(request: Request) {
     }
     
     // 使用全局集合实例
-    const collection = new ChromaCollection(
-      collectionName || 'Gimme-icons'
-    );
+    const collection = new ChromaCollection();
     
     // 处理元数据中的数组，将其转换为字符串
     const sanitizedMetadata = metadata ? (() => {

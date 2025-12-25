@@ -4,7 +4,7 @@ import { ChromaCollection } from '@/libs/chroma';
 // 处理检查向量是否存在的 API 路由
 export async function POST(request: Request) {
   try {
-    const { id, collectionName } = await request.json();
+    const { id } = await request.json();
     
     if (!id) {
       return NextResponse.json(
@@ -14,9 +14,7 @@ export async function POST(request: Request) {
     }
     
     // 使用全局集合实例
-    const collection = new ChromaCollection(
-      collectionName || 'Gimme-icons'
-    );
+    const collection = new ChromaCollection();
     
     // 检查向量是否存在
     const result = await collection.get({ ids: [id] });

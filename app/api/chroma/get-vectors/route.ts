@@ -5,7 +5,7 @@ import type { VectorStoreItem } from '@/services/vector-stores/IVectorStore';
 // 处理获取向量的 API 路由
 export async function POST(request: Request) {
   try {
-    const { ids, collectionName } = await request.json();
+    const { ids } = await request.json();
     
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json(
@@ -15,9 +15,7 @@ export async function POST(request: Request) {
     }
     
     // 使用全局集合实例
-    const collection = new ChromaCollection(
-      collectionName || 'Gimme-icons'
-    );
+    const collection = new ChromaCollection();
     
     // 获取向量
     const result = await collection.get({ ids });

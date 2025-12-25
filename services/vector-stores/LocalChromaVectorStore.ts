@@ -4,12 +4,13 @@ export class LocalChromaVectorStore implements IVectorStore {
   private initialized: boolean = false;
   private client!: any;
   private collection!: any;
-  private collectionName: string = 'Gimme-icons';
+  private collectionName!: string;
   private persistDirectory: string = './chromadb_data';
 
   constructor(collectionName?: string, persistDirectory?: string) {
-    if (collectionName) {
-      this.collectionName = collectionName;
+    this.collectionName = collectionName ?? process.env.CHROMA_COLLECTION!;
+    if (!this.collectionName) {
+      throw new Error('Missing CHROMA_COLLECTION in environment');
     }
     if (persistDirectory) {
       this.persistDirectory = persistDirectory;

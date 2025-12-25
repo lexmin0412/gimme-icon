@@ -39,6 +39,7 @@ class IconSearchService {
         storeName: getVectorStoreName(embeddingService.getCurrentModel())
       };
     }
+    console.log('vectorStoreConfig', vectorStoreConfig)
     this.vectorStoreConfig = vectorStoreConfig;
     this.vectorStore = getVectorStore(vectorStoreConfig);
   }

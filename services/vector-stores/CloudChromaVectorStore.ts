@@ -2,13 +2,8 @@ import type { IVectorStore, VectorStoreItem, SearchResult } from "./IVectorStore
 
 export class CloudChromaVectorStore implements IVectorStore {
   private initialized: boolean = false;
-  private collectionName: string = "Gimme-icons";
 
-  constructor(collectionName?: string) {
-    if (collectionName) {
-      this.collectionName = collectionName;
-    }
-  }
+  constructor() {}
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
@@ -19,7 +14,6 @@ export class CloudChromaVectorStore implements IVectorStore {
 
       this.initialized = true;
       console.log("CloudChromaVectorStore initialized successfully");
-      console.log(`Collection name: ${this.collectionName}`);
     } catch (error) {
       console.error("Failed to initialize CloudChromaVectorStore:", error);
       throw error;
@@ -37,8 +31,7 @@ export class CloudChromaVectorStore implements IVectorStore {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ 
-        items,
-        collectionName: this.collectionName 
+        items
       }),
     });
 
@@ -69,8 +62,7 @@ export class CloudChromaVectorStore implements IVectorStore {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ 
-        id,
-        collectionName: this.collectionName 
+        id
       }),
     });
 
@@ -97,8 +89,7 @@ export class CloudChromaVectorStore implements IVectorStore {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ 
-        ids,
-        collectionName: this.collectionName 
+        ids
       }),
     });
 
@@ -123,8 +114,7 @@ export class CloudChromaVectorStore implements IVectorStore {
       body: JSON.stringify({
         queryEmbedding: queryVector,
         limit,
-        filters,
-        collectionName: this.collectionName,
+        filters
       }),
     });
 
@@ -143,15 +133,7 @@ export class CloudChromaVectorStore implements IVectorStore {
   }
 
   async getVectorCount(): Promise<number> {
-    const response = await fetch("/api/chroma/count", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ 
-        collectionName: this.collectionName 
-      }),
-    });
+    const response = await fetch("/api/chroma/count");
 
     const data = await response.json();
     return data.count || 0;
@@ -163,9 +145,7 @@ export class CloudChromaVectorStore implements IVectorStore {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ 
-        collectionName: this.collectionName 
-      }),
+      body: JSON.stringify({})
     });
 
     const data = await response.json();

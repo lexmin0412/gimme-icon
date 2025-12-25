@@ -4,13 +4,8 @@ import { ChromaCollection } from '@/libs/chroma';
 // 处理获取向量数量的 API 路由
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const collectionName = searchParams.get('collectionName');
-    
     // 使用全局集合实例
-    const collection = new ChromaCollection(
-      collectionName || 'Gimme-icons'
-    );
+    const collection = new ChromaCollection();
     
     // 获取向量数量
     const count = await collection.count();
