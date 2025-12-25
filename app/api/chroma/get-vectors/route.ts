@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     
     // 使用全局集合实例
     const collection = new ChromaCollection(
-      collectionName || 'gimme_icon_collection'
+      collectionName || 'Gimme-icons'
     );
     
     // 获取向量

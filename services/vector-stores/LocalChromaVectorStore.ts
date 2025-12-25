@@ -1,10 +1,10 @@
-import type { IVectorStore, VectorStoreItem } from './IVectorStore';
+import type { IVectorStore, VectorStoreItem, SearchResult } from './IVectorStore';
 
 export class LocalChromaVectorStore implements IVectorStore {
   private initialized: boolean = false;
-  private client!: { getOrCreateCollection: (options: any) => Promise<any>; deleteCollection: (options: any) => Promise<any> };
-  private collection!: { upsert: (options: any) => Promise<void>; get: (options: any) => Promise<any>; query: (options: any) => Promise<any>; delete: (options: any) => Promise<void>; count: () => Promise<number> };
-  private collectionName: string = 'gimme_icon_collection';
+  private client!: any;
+  private collection!: any;
+  private collectionName: string = 'Gimme-icons';
   private persistDirectory: string = './chromadb_data';
 
   constructor(collectionName?: string, persistDirectory?: string) {
@@ -20,20 +20,15 @@ export class LocalChromaVectorStore implements IVectorStore {
     if (this.initialized) return;
 
     try {
-      // 检查是否在浏览器环境中
       if (typeof window !== 'undefined') {
-        throw new Error('LocalChromaVectorStore is not supported in browser environment. Please use IndexedDBVectorStore instead.');
+        throw new Error('LocalChromaVectorStore is not supported in browser environment.');
       }
 
-      // 动态导入ChromaDB（仅在Node.js环境可用）
       const { ChromaClient } = await import('chromadb');
-
-      // 创建ChromaDB客户端，使用本地持久化存储
       this.client = new ChromaClient({
         path: this.persistDirectory
       });
 
-      // 创建或获取集合
       this.collection = await this.client.getOrCreateCollection({
         name: this.collectionName,
         metadata: {
@@ -44,23 +39,23 @@ export class LocalChromaVectorStore implements IVectorStore {
 
       this.initialized = true;
       console.log('LocalChromaVectorStore initialized successfully');
-      console.log(`Collection name: ${this.collectionName}`);
-      console.log(`Persist directory: ${this.persistDirectory}`);
     } catch (error) {
       console.error('Failed to initialize LocalChromaVectorStore:', error);
       throw error;
     }
   }
 
-  async addVector(item: VectorStoreItem): Promise<void> {
-    await this.collection.upsert({
-      ids: [item.id],
-      embeddings: [item.embedding],
-      metadatas: item.metadata ? [item.metadata] : undefined
-    });
+  private async ensureInitialized() {
+      if (!this.initialized) await this.initialize();
   }
 
-  async addVectors(items: VectorStoreItem[]): Promise<void> {
+  async addVector(item: VectorStoreItem): Promise<void> {
+    await this.ensureInitialized();
+    await this.batchAddVectors([item]);
+  }
+
+  async batchAddVectors(items: VectorStoreItem[]): Promise<void> {
+    await this.ensureInitialized();
     const ids = items.map(item => item.id);
     const embeddings = items.map(item => item.embedding);
     const metadatas = items.map(item => item.metadata);
@@ -72,15 +67,34 @@ export class LocalChromaVectorStore implements IVectorStore {
     });
   }
 
+  async updateVector(id: string, vector: number[], metadata?: Record<string, any>): Promise<void> {
+      await this.batchUpdateVectors([{ id, vector, metadata }]);
+  }
+
+  async batchUpdateVectors(items: { id: string; vector: number[]; metadata?: Record<string, any> }[]): Promise<void> {
+      // Upsert handles updates
+      await this.ensureInitialized();
+      const vectorItems = items.map(item => ({
+        id: item.id,
+        embedding: item.vector,
+        metadata: item.metadata
+      }));
+      await this.batchAddVectors(vectorItems);
+  }
+
+  async deleteVector(id: string): Promise<void> {
+      await this.batchDeleteVectors([id]);
+  }
+
+  async batchDeleteVectors(ids: string[]): Promise<void> {
+      await this.ensureInitialized();
+      await this.collection.delete({ ids });
+  }
+
   async getVector(id: string): Promise<VectorStoreItem | undefined> {
-    const result = await this.collection.get({
-      ids: [id]
-    });
-
-    if (result.ids.length === 0) {
-      return undefined;
-    }
-
+    await this.ensureInitialized();
+    const result = await this.collection.get({ ids: [id], include: ['embeddings', 'metadatas'] });
+    if (result.ids.length === 0) return undefined;
     return {
       id: result.ids[0],
       embedding: result.embeddings[0],
@@ -89,10 +103,8 @@ export class LocalChromaVectorStore implements IVectorStore {
   }
 
   async getVectors(ids: string[]): Promise<VectorStoreItem[]> {
-    const result = await this.collection.get({
-      ids
-    });
-
+    await this.ensureInitialized();
+    const result = await this.collection.get({ ids, include: ['embeddings', 'metadatas'] });
     return result.ids.map((id: string, index: number) => ({
       id,
       embedding: result.embeddings[index],
@@ -100,69 +112,42 @@ export class LocalChromaVectorStore implements IVectorStore {
     }));
   }
 
-  async searchSimilarVectors(
+  async searchVectors(
     queryVector: number[],
     limit: number,
-    filters?: Record<string, string[] | string>
-  ): Promise<{ id: string; score: number; metadata?: Record<string, string[] | string | number> }[]> {
-    const result = await this.collection.query({
-      queryEmbeddings: [queryVector],
-      nResults: limit,
-      where: filters
-    });
+    filters?: Record<string, any>
+  ): Promise<SearchResult[]> {
+      await this.ensureInitialized();
+      const result = await this.collection.query({
+          queryEmbeddings: [queryVector],
+          nResults: limit,
+          where: filters // Chroma filter format might be different, but assuming it matches for now
+      });
+      
+      const ids = result.ids[0];
+      const distances = result.distances?.[0]; 
+      const metadatas = result.metadatas?.[0];
 
-    // 转换结果格式
-    if (!result.ids[0] || result.ids[0].length === 0) {
-      return [];
-    }
-
-    return result.ids[0].map((id: string, index: number) => ({
-      id,
-      score: result.distances[0][index],
-      metadata: result.metadatas?.[0]?.[index] || undefined
-    }));
-  }
-
-  async deleteVector(id: string): Promise<void> {
-    await this.collection.delete({
-      ids: [id]
-    });
-  }
-
-  async clear(): Promise<void> {
-    // 删除并重新创建集合
-    await this.client.deleteCollection({
-      name: this.collectionName
-    });
-
-    this.collection = await this.client.getOrCreateCollection({
-      name: this.collectionName,
-      metadata: {
-        description: 'Gimme Icon Vector Store Collection',
-        createdAt: new Date().toISOString()
-      }
-    });
+      return ids.map((id: string, index: number) => ({
+          id,
+          score: distances ? 1 - distances[index] : 0, 
+          metadata: metadatas?.[index] || undefined
+      }));
   }
 
   async hasVector(id: string): Promise<boolean> {
-    const result = await this.collection.get({
-      ids: [id]
-    });
-
-    return result.ids.length > 0;
+      const v = await this.getVector(id);
+      return !!v;
   }
 
   async getVectorCount(): Promise<number> {
-    const count = await this.collection.count();
-    return count;
+      await this.ensureInitialized();
+      return await this.collection.count();
   }
 
-  async updateVector(id: string, newEmbedding: number[], metadata?: Record<string, string[] | string | number>): Promise<void> {
-    // 使用upsert操作更新向量，ChromaDB的upsert会创建或更新向量
-    await this.collection.upsert({
-      ids: [id],
-      embeddings: [newEmbedding],
-      metadatas: metadata ? [metadata] : undefined
-    });
+  async clear(): Promise<void> {
+      await this.ensureInitialized();
+      await this.client.deleteCollection({ name: this.collectionName });
+      this.collection = await this.client.getOrCreateCollection({ name: this.collectionName });
   }
 }

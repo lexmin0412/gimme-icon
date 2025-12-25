@@ -1,85 +1,96 @@
 export interface VectorStoreItem {
   id: string;
   embedding: number[];
-  metadata?: Record<string, string[] | string | number>;
+  metadata?: Record<string, any>;
+}
+
+export interface SearchResult {
+  id: string;
+  score: number;
+  metadata?: Record<string, any>;
 }
 
 export interface IVectorStore {
   /**
-   * 初始化向量存储
+   * Initialize the vector store
    */
   initialize(): Promise<void>;
 
   /**
-   * 添加单个向量到存储中
-   * @param item 向量存储项
+   * Search for vectors similar to the query vector
+   * @param queryVector Query vector
+   * @param limit Maximum number of results
+   * @param filters Optional filters
    */
-  addVector(item: VectorStoreItem): Promise<void>;
+  searchVectors(
+    queryVector: number[],
+    limit: number,
+    filters?: Record<string, any>
+  ): Promise<SearchResult[]>;
 
   /**
-   * 批量添加向量到存储中
-   * @param items 向量存储项数组
-   */
-  addVectors(items: VectorStoreItem[]): Promise<void>;
-
-  /**
-   * 根据ID获取向量
-   * @param id 向量ID
-   * @returns 向量数据，如果不存在返回undefined
+   * Get a vector by ID
+   * @param id Vector ID
    */
   getVector(id: string): Promise<VectorStoreItem | undefined>;
 
   /**
-   * 根据ID批量获取向量
-   * @param ids 向量ID数组
-   * @returns 向量数据数组
+   * Get multiple vectors by IDs
+   * @param ids Vector IDs
    */
   getVectors(ids: string[]): Promise<VectorStoreItem[]>;
 
   /**
-   * 搜索与查询向量最相似的向量
-   * @param queryVector 查询向量
-   * @param limit 返回结果数量
-   * @param filters 可选的过滤条件
-   * @returns 搜索结果数组，包含ID、相似度分数和元数据
+   * Add a single vector
+   * @param item Vector item
    */
-  searchSimilarVectors(
-    queryVector: number[],
-    limit: number,
-    filters?: Record<string, string[] | string>
-  ): Promise<{ id: string; score: number; metadata?: Record<string, string[] | string | number> }[]>;
+  addVector(item: VectorStoreItem): Promise<void>;
 
   /**
-   * 删除指定ID的向量
-   * @param id 向量ID
+   * Batch add vectors
+   * @param items Vector items
+   */
+  batchAddVectors(items: VectorStoreItem[]): Promise<void>;
+
+  /**
+   * Update a vector
+   * @param id Vector ID
+   * @param vector New embedding vector
+   * @param metadata New metadata
+   */
+  updateVector(id: string, vector: number[], metadata?: Record<string, any>): Promise<void>;
+
+  /**
+   * Batch update vectors
+   * @param items Items to update
+   */
+  batchUpdateVectors(items: { id: string; vector: number[]; metadata?: Record<string, any> }[]): Promise<void>;
+
+  /**
+   * Delete a vector by ID
+   * @param id Vector ID
    */
   deleteVector(id: string): Promise<void>;
 
   /**
-   * 清空向量存储
+   * Batch delete vectors by IDs
+   * @param ids Vector IDs
    */
-  clear(): Promise<void>;
+  batchDeleteVectors(ids: string[]): Promise<void>;
 
   /**
-   * 检查存储中是否包含指定ID的向量
-   * @param id 向量ID
+   * Check if a vector exists
+   * @param id Vector ID
    */
   hasVector(id: string): Promise<boolean>;
 
   /**
-   * 获取存储中的向量数量
+   * Get the total count of vectors
    */
   getVectorCount(): Promise<number>;
 
   /**
-   * 更新指定ID的向量
-   * @param id 向量ID
-   * @param newEmbedding 新的向量嵌入
-   * @param metadata 可选的更新元数据
+   * Clear the vector store
    */
-  updateVector(
-    id: string,
-    newEmbedding: number[],
-    metadata?: Record<string, string[] | string | number>
-  ): Promise<void>;
+  clear(): Promise<void>;
 }

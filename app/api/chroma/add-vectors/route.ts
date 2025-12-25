@@ -15,13 +15,25 @@ export async function POST(request: Request) {
     
     // 使用全局集合实例
     const collection = new ChromaCollection(
-      collectionName || 'gimme_icon_collection'
+      collectionName || 'Gimme-icons'
     );
     
     // 准备数据
     const ids = items.map((item) => item.id);
     const embeddings = items.map((item) => item.embedding);
-    const metadatas = items.map((item) => item.metadata);
+    const metadatas = items.map((item) => {
+      if (!item.metadata) return undefined;
+      const metadata = item.metadata as Record<string, unknown>;
+      const sanitized: Record<string, string | number | boolean> = {};
+      for (const [key, value] of Object.entries(metadata)) {
+        if (Array.isArray(value)) {
+          sanitized[key] = (value as unknown[]).join(',');
+        } else {
+          sanitized[key] = value as string | number | boolean;
+        }
+      }
+      return sanitized;
+    });
     
     // 添加向量
     await collection.upsert({

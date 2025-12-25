@@ -5,14 +5,14 @@ import IconGrid from "./components/IconGrid";
 import IconPreview from "./components/IconPreview";
 import TabButton from "./components/TabButton";
 import {
-  vectorStoreService,
+  iconSearchService,
   getVectorStoreName,
-} from "../services/vector-store-service";
+} from "../services/IconSearchService";
 import type { SearchResult, FilterOptions } from "../types/icon";
 import { SearchProvider, SearchContext } from "../context/SearchContext";
 import { embeddingService } from "../services/embedding";
 import { APP_NAME, APP_DESCRIPTION } from "../constants";
-import type { VectorStoreType, VectorStoreConfig } from "../services/vector-stores/VectorStoreFactory";
+import type { VectorStoreType, VectorStoreConfig } from "../services/vector-store-service";
 import { AVAILABLE_MODELS, ModelId } from "../services/embedding";
 import { useToast } from "./components/ToastProvider";
 import { getIconLibraries, loadIcons } from "../services/icons";
@@ -58,7 +58,7 @@ const HomeContent: React.FC = () => {
 
   const triggerFirstSearch = async () => {
     // 初始搜索（空查询，返回所有图标）
-    const initialResults = await vectorStoreService.searchIcons(
+    const initialResults = await iconSearchService.searchIcons(
       "",
       context?.filters || { libraries: [], categories: [], tags: [] }
     );
@@ -89,7 +89,7 @@ const HomeContent: React.FC = () => {
     context?.setQuery(query);
     try {
       setIsLoading(true);
-      const results = await vectorStoreService.searchIcons(
+      const results = await iconSearchService.searchIcons(
         query,
         context?.filters || { libraries: [], categories: [], tags: [] }
       );
@@ -107,7 +107,7 @@ const HomeContent: React.FC = () => {
     try {
       setIsLoading(true);
       // 重新搜索当前查询并应用新过滤器
-      const results = await vectorStoreService.searchIcons("", newFilters);
+      const results = await iconSearchService.searchIcons("", newFilters);
       context?.setResults(results);
     } catch (error) {
       console.error("Filter search failed:", error);
@@ -173,16 +173,16 @@ const HomeContent: React.FC = () => {
 
       // 检查IndexedDB中是否已有向量数据
       // const storedVectors = await localforage.getItem(vectorStoreName);
-      await vectorStoreService.reInitialize();
+      await iconSearchService.reInitialize();
 
       // if (storedVectors && Array.isArray(storedVectors) && storedVectors.length > 0) {
       //   // 如果有缓存，直接初始化而不强制重新生成
       //   console.log(`Found cached vectors in IndexedDB: ${vectorStoreName}`);
-      //   await vectorStoreService.initialize(false);
+      //   await iconSearchService.initialize(false);
       // } else {
       //   // 如果没有缓存，重新初始化并强制生成向量
       //   console.log(`No cached vectors found in IndexedDB, regenerating...`);
-      //   await vectorStoreService.reInitialize();
+      //   await iconSearchService.reInitialize();
       // }
 
       // 刷新搜索结果
@@ -212,14 +212,14 @@ const HomeContent: React.FC = () => {
         case "local-chroma":
           config = { 
             type: "local-chroma",
-            collectionName: "gimme_icon_collection",
+            collectionName: "Gimme-icons",
             persistDirectory: "./chromadb_data"
           };
           break;
         case "cloud-chroma":
           config = { 
             type: "cloud-chroma",
-            collectionName: "gimme_icon_collection"
+            collectionName: "Gimme-icons"
           };
           break;
         default:
@@ -227,7 +227,7 @@ const HomeContent: React.FC = () => {
       }
 
       // 切换向量存储
-      await vectorStoreService.switchVectorStore(config);
+      await iconSearchService.switchVectorStore(config);
       setCurrentVectorStoreType(newType);
       
       // 保存到本地存储
@@ -283,11 +283,11 @@ const HomeContent: React.FC = () => {
         ) {
           // 如果有缓存，直接初始化而不强制重新生成
           console.log(`Found cached vectors in IndexedDB: ${vectorStoreName}`);
-          await vectorStoreService.initialize(false);
+          await iconSearchService.initialize(false);
         } else {
           // 如果没有缓存，重新初始化并强制生成向量
           console.log(`No cached vectors found in IndexedDB, regenerating...`);
-          await vectorStoreService.reInitialize();
+          await iconSearchService.reInitialize();
         }
 
         // 刷新搜索结果
@@ -815,14 +815,14 @@ const Home: React.FC = () => {
             case "local-chroma":
               config = { 
                 type: "local-chroma",
-                collectionName: "gimme_icon_collection",
+                collectionName: "Gimme-icons",
                 persistDirectory: "./chromadb_data"
               };
               break;
             case "cloud-chroma":
               config = { 
                 type: "cloud-chroma",
-                collectionName: "gimme_icon_collection"
+                collectionName: "Gimme-icons"
               };
               break;
             default:
@@ -830,11 +830,11 @@ const Home: React.FC = () => {
           }
           
           // 切换到保存的向量存储类型
-          await vectorStoreService.switchVectorStore(config);
+          await iconSearchService.switchVectorStore(config);
         }
         
         // 初始化向量存储，传入用户保存的图标库配置
-        await vectorStoreService.initialize(false, selectedLibraries);
+        await iconSearchService.initialize(false, selectedLibraries);
       } catch (error) {
         console.error("Failed to initialize app:", error);
       } finally {

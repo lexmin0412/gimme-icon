@@ -21,7 +21,7 @@ function getChromaEnvConfig() {
  * 获取全局 Chroma 客户端实例
  * @param isCloud 是否官方云服务
  */
-export async function getGlobalChromaClient(isCloud: boolean = false): Promise<CloudClient> {
+export async function getGlobalChromaClient(isCloud: boolean = true): Promise<CloudClient> {
   if (!globalChromaClient) {
     const { apiKey, tenant, database } = getChromaEnvConfig();
     const { CloudClient } = await import("chromadb");

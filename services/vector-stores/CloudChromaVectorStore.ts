@@ -1,8 +1,8 @@
-import type { IVectorStore, VectorStoreItem } from "./IVectorStore";
+import type { IVectorStore, VectorStoreItem, SearchResult } from "./IVectorStore";
 
 export class CloudChromaVectorStore implements IVectorStore {
   private initialized: boolean = false;
-  private collectionName: string = "gimme_icon_collection";
+  private collectionName: string = "Gimme-icons";
 
   constructor(collectionName?: string) {
     if (collectionName) {
@@ -27,10 +27,10 @@ export class CloudChromaVectorStore implements IVectorStore {
   }
 
   async addVector(item: VectorStoreItem): Promise<void> {
-    await this.addVectors([item]);
+    await this.batchAddVectors([item]);
   }
 
-  async addVectors(items: VectorStoreItem[]): Promise<void> {
+  async batchAddVectors(items: VectorStoreItem[]): Promise<void> {
     const response = await fetch("/api/chroma/add-vectors", {
       method: "POST",
       headers: {
@@ -46,6 +46,43 @@ export class CloudChromaVectorStore implements IVectorStore {
     if (!data.success) {
       throw new Error(data.error || "Failed to add vectors");
     }
+  }
+
+  async updateVector(id: string, vector: number[], metadata?: Record<string, any>): Promise<void> {
+    await this.batchUpdateVectors([{ id, vector, metadata }]);
+  }
+
+  async batchUpdateVectors(items: { id: string; vector: number[]; metadata?: Record<string, any> }[]): Promise<void> {
+    // Reuse addVectors since it uses upsert
+    const vectorItems = items.map(item => ({
+      id: item.id,
+      embedding: item.vector,
+      metadata: item.metadata
+    }));
+    await this.batchAddVectors(vectorItems);
+  }
+
+  async deleteVector(id: string): Promise<void> {
+    const response = await fetch("/api/chroma/delete-vector", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ 
+        id,
+        collectionName: this.collectionName 
+      }),
+    });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || "Failed to delete vector");
+    }
+  }
+
+  async batchDeleteVectors(ids: string[]): Promise<void> {
+    // Implement parallel delete since no batch delete API yet
+    await Promise.all(ids.map(id => this.deleteVector(id)));
   }
 
   async getVector(id: string): Promise<VectorStoreItem | undefined> {
@@ -73,17 +110,11 @@ export class CloudChromaVectorStore implements IVectorStore {
     return data.vectors || [];
   }
 
-  async searchSimilarVectors(
+  async searchVectors(
     queryVector: number[],
     limit: number,
-    filters?: Record<string, string[] | string>
-  ): Promise<
-    {
-      id: string;
-      score: number;
-      metadata?: Record<string, string[] | string | number>;
-    }[]
-  > {
+    filters?: Record<string, any>
+  ): Promise<SearchResult[]> {
     const response = await fetch("/api/chroma/search", {
       method: "POST",
       headers: {
@@ -99,28 +130,31 @@ export class CloudChromaVectorStore implements IVectorStore {
 
     const data = await response.json();
     if (!data.success) {
-      throw new Error(data.error || "Failed to search vectors");
+      console.error("API search failed:", data.error);
+      throw new Error(data.error || "Search failed");
     }
-
-    return data.results || [];
+    
+    return data.results;
   }
 
-  async deleteVector(id: string): Promise<void> {
-    const response = await fetch("/api/chroma/delete-vector", {
+  async hasVector(id: string): Promise<boolean> {
+    const vector = await this.getVector(id);
+    return !!vector;
+  }
+
+  async getVectorCount(): Promise<number> {
+    const response = await fetch("/api/chroma/count", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ 
-        id,
         collectionName: this.collectionName 
       }),
     });
 
     const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error || "Failed to delete vector");
-    }
+    return data.count || 0;
   }
 
   async clear(): Promise<void> {
@@ -137,56 +171,6 @@ export class CloudChromaVectorStore implements IVectorStore {
     const data = await response.json();
     if (!data.success) {
       throw new Error(data.error || "Failed to clear vector store");
-    }
-  }
-
-  async hasVector(id: string): Promise<boolean> {
-    const response = await fetch("/api/chroma/has-vector", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ 
-        id,
-        collectionName: this.collectionName 
-      }),
-    });
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error || "Failed to check vector existence");
-    }
-
-    return data.hasVector || false;
-  }
-
-  async getVectorCount(): Promise<number> {
-    const response = await fetch(`/api/chroma/count?collectionName=${encodeURIComponent(this.collectionName)}`);
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error || "Failed to get vector count");
-    }
-
-    return data.count || 0;
-  }
-
-  async updateVector(id: string, newEmbedding: number[], metadata?: Record<string, string[] | string | number>): Promise<void> {
-    const response = await fetch("/api/chroma/update-vector", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ 
-        id, 
-        embedding: newEmbedding, 
-        metadata,
-        collectionName: this.collectionName 
-      }),
-    });
-
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error || "Failed to update vector");
     }
   }
 }

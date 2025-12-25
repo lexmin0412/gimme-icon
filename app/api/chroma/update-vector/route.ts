@@ -15,14 +15,28 @@ export async function POST(request: Request) {
     
     // 使用全局集合实例
     const collection = new ChromaCollection(
-      collectionName || 'gimme_icon_collection'
+      collectionName || 'Gimme-icons'
     );
     
+    // 处理元数据中的数组，将其转换为字符串
+    const sanitizedMetadata = metadata ? (() => {
+      const meta = metadata as Record<string, unknown>;
+      const sanitized: Record<string, string | number | boolean> = {};
+      for (const [key, value] of Object.entries(meta)) {
+        if (Array.isArray(value)) {
+          sanitized[key] = (value as unknown[]).join(',');
+        } else {
+          sanitized[key] = value as string | number | boolean;
+        }
+      }
+      return sanitized;
+    })() : undefined;
+
     // 更新向量
     await collection.upsert({
       ids: [id],
       embeddings: [embedding],
-      metadatas: metadata ? [metadata] : undefined,
+      metadatas: sanitizedMetadata ? [sanitizedMetadata] : undefined,
     });
     
     return NextResponse.json({ success: true, message: 'Vector updated successfully' });

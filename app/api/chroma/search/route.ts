@@ -5,7 +5,7 @@ import { ChromaCollection } from '@/libs/chroma';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { queryEmbedding, filters, limit, collectionName } = body;
+    const { queryEmbedding, limit, collectionName } = body;
     
     if (!queryEmbedding || !Array.isArray(queryEmbedding)) {
       return NextResponse.json(
@@ -16,14 +16,14 @@ export async function POST(request: Request) {
     
     // 使用全局集合实例
     const collection = new ChromaCollection(
-      collectionName || 'gimme_icon_collection'
+      collectionName || 'Gimme-icons'
     );
     
     // 执行向量搜索
     const searchResults = await collection.query({
       queryEmbeddings: [queryEmbedding],
       nResults: limit || 20,
-      where: filters,
+      // where: filters,
     });
     
     // 转换结果格式
@@ -36,7 +36,15 @@ export async function POST(request: Request) {
     if (searchResults.ids && searchResults.ids.length > 0 && searchResults.ids[0]) {
       results = searchResults.ids[0].map((id: string, index: number) => ({
         id,
-        score: searchResults.distances?.[0]?.[index] || 0,
+        score: (() => {
+          // 明确变量是余弦距离，增强可读性
+          const cosineDistance = searchResults.distances?.[0]?.[index] ?? 2;
+          // 钳位到余弦距离的合法区间
+          const clampedDistance = Math.min(2, Math.max(0, cosineDistance));
+          // 映射到0~1的相似度得分
+          const similarityScore = 1 - (clampedDistance / 2);
+          return similarityScore;
+        })(),
         metadata: searchResults.metadatas?.[0]?.[index] || undefined,
       }));
     }

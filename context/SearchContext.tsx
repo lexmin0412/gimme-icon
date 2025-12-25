@@ -1,7 +1,7 @@
 import React, { createContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Icon, SearchResult, FilterOptions } from '../types/icon';
-import { vectorStoreService } from '../services/vector-store-service';
+import { iconSearchService } from '../services/IconSearchService';
 
 // 移动这个常量到单独的文件或将其作为默认值的一部分
 const DEFAULT_FILTERS: FilterOptions = {
@@ -38,12 +38,12 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const [selectedIcon, setSelectedIcon] = useState<Icon | null>(null);
   
   // 获取可用的过滤选项并状态化
-  const [availableFilters, setAvailableFilters] = useState(vectorStoreService.getFilterOptions());
+  const [availableFilters, setAvailableFilters] = useState(iconSearchService.getFilterOptions());
 
   const searchIcons = async () => {
     setIsLoading(true);
     try {
-      const searchResults = await vectorStoreService.searchIcons(query, filters);
+      const searchResults = await iconSearchService.searchIcons(query, filters);
       setResults(searchResults);
     } catch (error) {
       console.error('Search failed:', error);

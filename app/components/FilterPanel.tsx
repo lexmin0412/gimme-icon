@@ -1,8 +1,8 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import type { FilterOptions } from '@/types/icon';
-import { vectorStoreService } from '@/services/vector-store-service';
-import type { VectorStoreConfig } from '@/services/vector-stores/VectorStoreFactory';
+import { iconSearchService } from '@/services/IconSearchService';
+import type { VectorStoreConfig } from '@/services/vector-store-service';
 import { useToast } from './ToastProvider';
 
 interface FilterPanelProps {
@@ -107,7 +107,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         })
       };
       
-      await vectorStoreService.switchVectorStore(config);
+      await iconSearchService.switchVectorStore(config);
       console.log('Vector store configuration applied successfully');
     } catch (error) {
       console.error('Failed to apply vector store configuration:', error);

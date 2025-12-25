@@ -3,6 +3,8 @@ import React, { useState } from 'react';
 import type { Icon } from '@/types/icon';
 import { useToast } from './ToastProvider';
 import { Icon as IconifyIcon } from '@iconify/react';
+import { Button } from '@/components/ui/button';
+import { embeddingService } from '@/services/embedding';
 
 interface IconPreviewProps {
   icon: Icon | null;
@@ -15,6 +17,7 @@ const IconPreview: React.FC<IconPreviewProps> = ({ icon, onClose, onTagAdded }) 
   const [newTag, setNewTag] = useState('');
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [tagError, setTagError] = useState('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   if (!icon) return null;
 
@@ -80,6 +83,43 @@ const IconPreview: React.FC<IconPreviewProps> = ({ icon, onClose, onTagAdded }) 
     }
   };
 
+  const handleRefreshEmbedding = async () => {
+    setIsRefreshing(true);
+    try {
+      // 1. 初始化 embedding 服务
+      await embeddingService.initialize();
+
+      // 2. 生成 embedding
+      const document = `${icon.name} ${icon.tags.join(' ')} ${icon.synonyms.join(' ')}`;
+      const embedding = await embeddingService.generateEmbedding(document);
+
+      // 3. 调用 API 更新向量
+      const response = await fetch('/api/refresh-embedding', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          icon: icon,
+          embedding: embedding,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to refresh embedding');
+      }
+
+      showToast('Embedding refreshed successfully!', 'success');
+    } catch (error) {
+      console.error('Failed to refresh embedding:', error);
+      showToast(error instanceof Error ? error.message : 'Failed to refresh embedding', 'error');
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(0,0,0,0.7)]">
       <div className="relative w-full max-w-md p-6 bg-white rounded-lg shadow-xl dark:bg-gray-800">
@@ -98,6 +138,16 @@ const IconPreview: React.FC<IconPreviewProps> = ({ icon, onClose, onTagAdded }) 
           </div>
           <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">{icon.name}</h2>
           <p className="text-sm text-gray-500 dark:text-gray-400">{icon.library} - {icon.category}</p>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-2 gap-2 text-gray-700 hover:text-gray-900"
+            onClick={handleRefreshEmbedding}
+            disabled={isRefreshing}
+          >
+            <IconifyIcon icon="material-symbols:refresh" className={isRefreshing ? "animate-spin" : ""} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Embedding Data'}
+          </Button>
         </div>
 
         <div className="mb-6">

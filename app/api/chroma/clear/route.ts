@@ -5,7 +5,7 @@ import { ChromaClient } from '@/libs/chroma';
 export async function POST(request: Request) {
   try {
     const { collectionName } = await request.json();
-    const name = collectionName || 'gimme_icon_collection';
+    const name = collectionName || 'Gimme-icons';
     
     // 删除集合
     const clientWrapper = new ChromaClient();
