@@ -12,6 +12,7 @@ import type { SearchResult, FilterOptions } from "../types/icon";
 import { SearchProvider, SearchContext } from "../context/SearchContext";
 import { embeddingService } from "../services/embedding";
 import { APP_NAME, APP_DESCRIPTION } from "../constants";
+import type { VectorStoreType, VectorStoreConfig } from "../services/vector-stores/VectorStoreFactory";
 import { AVAILABLE_MODELS, ModelId } from "../services/embedding";
 import { useToast } from "./components/ToastProvider";
 import { getIconLibraries, loadIcons } from "../services/icons";
@@ -46,9 +47,12 @@ const HomeContent: React.FC = () => {
   ]);
   const [isLoadingLibraries, setIsLoadingLibraries] = useState(false);
   const [isUpdatingLibraries, setIsUpdatingLibraries] = useState(false);
+  
+  // 向量存储类型相关状态
+  const [currentVectorStoreType, setCurrentVectorStoreType] = useState<VectorStoreType>("indexed-db");
 
   // 选项卡状态
-  const [activeTab, setActiveTab] = useState<"vectorModel" | "iconLibraries">(
+  const [activeTab, setActiveTab] = useState<"vectorModel" | "iconLibraries" | "vectorStore">(
     "vectorModel"
   );
 
@@ -67,6 +71,12 @@ const HomeContent: React.FC = () => {
     // 获取当前模型并更新状态
     const model = embeddingService.getCurrentModel();
     setCurrentModel(model);
+    
+    // 获取当前向量存储类型
+    const savedVectorStoreType = localStorage.getItem("vectorStoreType") as VectorStoreType;
+    if (savedVectorStoreType) {
+      setCurrentVectorStoreType(savedVectorStoreType);
+    }
   }, []);
 
   // 加载图标库列表
@@ -187,6 +197,52 @@ const HomeContent: React.FC = () => {
       showToast("Failed to update icon libraries", "error");
     } finally {
       setIsUpdatingLibraries(false);
+    }
+  };
+
+  // 处理向量存储类型切换
+  const handleVectorStoreChange = async (newType: VectorStoreType) => {
+    try {
+      let config: VectorStoreConfig;
+      
+      switch (newType) {
+        case "indexed-db":
+          config = { type: "indexed-db" };
+          break;
+        case "local-chroma":
+          config = { 
+            type: "local-chroma",
+            collectionName: "gimme_icon_collection",
+            persistDirectory: "./chromadb_data"
+          };
+          break;
+        case "cloud-chroma":
+          config = { 
+            type: "cloud-chroma",
+            collectionName: "gimme_icon_collection"
+          };
+          break;
+        default:
+          throw new Error(`Unsupported vector store type: ${newType}`);
+      }
+
+      // 切换向量存储
+      await vectorStoreService.switchVectorStore(config);
+      setCurrentVectorStoreType(newType);
+      
+      // 保存到本地存储
+      localStorage.setItem("vectorStoreType", newType);
+      
+      showToast("Vector store type changed successfully!", "success");
+      
+      // 重新初始化搜索
+      await triggerFirstSearch();
+      
+      // 关闭设置弹窗
+      setShowSettingsMenu(false);
+    } catch (error) {
+      console.error("Error switching vector store:", error);
+      showToast("Failed to switch vector store type", "error");
     }
   };
 
@@ -344,6 +400,12 @@ const HomeContent: React.FC = () => {
                         activeTab={activeTab}
                         onClick={setActiveTab}
                       />
+                      <TabButton
+                        tab="vectorStore"
+                        label="Vector Store Type"
+                        activeTab={activeTab}
+                        onClick={setActiveTab}
+                      />
                     </div>
 
                     {/* 右侧内容 */}
@@ -424,6 +486,103 @@ const HomeContent: React.FC = () => {
                               disabled={isChangingModel}
                             >
                               Save Model
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 向量存储类型选项卡内容 */}
+                      {activeTab === "vectorStore" && (
+                        <div>
+                          <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4">
+                            Vector Store Type
+                          </h3>
+                          <div className="space-y-3">
+                            <button
+                              onClick={() => setCurrentVectorStoreType("indexed-db")}
+                              className={`block w-full text-left px-4 py-3 text-sm ${
+                                currentVectorStoreType === "indexed-db"
+                                  ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              }`}
+                            >
+                              {currentVectorStoreType === "indexed-db" && (
+                                <svg
+                                  className="inline-block w-4 h-4 mr-2"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                              Indexed DB (Browser Local Storage)
+                              <div className="text-xs text-gray-500 dark:text-gray-400 ml-6">
+                                Fast, local, limited by browser storage
+                              </div>
+                            </button>
+                            <button
+                              onClick={() => setCurrentVectorStoreType("local-chroma")}
+                              className={`block w-full text-left px-4 py-3 text-sm ${
+                                currentVectorStoreType === "local-chroma"
+                                  ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              }`}
+                            >
+                              {currentVectorStoreType === "local-chroma" && (
+                                <svg
+                                  className="inline-block w-4 h-4 mr-2"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                              Local ChromaDB
+                              <div className="text-xs text-gray-500 dark:text-gray-400 ml-6">
+                                Local vector database, requires Node.js environment
+                              </div>
+                            </button>
+                            <button
+                              onClick={() => setCurrentVectorStoreType("cloud-chroma")}
+                              className={`block w-full text-left px-4 py-3 text-sm ${
+                                currentVectorStoreType === "cloud-chroma"
+                                  ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              }`}
+                            >
+                              {currentVectorStoreType === "cloud-chroma" && (
+                                <svg
+                                  className="inline-block w-4 h-4 mr-2"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
+                                </svg>
+                              )}
+                              Cloud ChromaDB
+                              <div className="text-xs text-gray-500 dark:text-gray-400 ml-6">
+                                Cloud-based vector database, scalable
+                              </div>
+                            </button>
+                          </div>
+                          <div className="mt-6 flex justify-end">
+                            <button
+                              onClick={() => handleVectorStoreChange(currentVectorStoreType)}
+                              className="px-4 py-2 text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                            >
+                              Save Vector Store Type
                             </button>
                           </div>
                         </div>
@@ -644,6 +803,36 @@ const Home: React.FC = () => {
           }
         }
 
+        // 获取保存的向量存储类型并应用
+        const savedVectorStoreType = localStorage.getItem("vectorStoreType") as VectorStoreType;
+        if (savedVectorStoreType) {
+          let config: VectorStoreConfig;
+          
+          switch (savedVectorStoreType) {
+            case "indexed-db":
+              config = { type: "indexed-db" };
+              break;
+            case "local-chroma":
+              config = { 
+                type: "local-chroma",
+                collectionName: "gimme_icon_collection",
+                persistDirectory: "./chromadb_data"
+              };
+              break;
+            case "cloud-chroma":
+              config = { 
+                type: "cloud-chroma",
+                collectionName: "gimme_icon_collection"
+              };
+              break;
+            default:
+              config = { type: "indexed-db" };
+          }
+          
+          // 切换到保存的向量存储类型
+          await vectorStoreService.switchVectorStore(config);
+        }
+        
         // 初始化向量存储，传入用户保存的图标库配置
         await vectorStoreService.initialize(false, selectedLibraries);
       } catch (error) {

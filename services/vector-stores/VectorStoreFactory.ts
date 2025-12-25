@@ -18,9 +18,6 @@ export interface LocalChromaVectorStoreConfig {
 
 export interface CloudChromaVectorStoreConfig {
   type: 'cloud-chroma';
-  apiKey: string;
-  tenant: string;
-  database: string;
   collectionName?: string;
 }
 
@@ -68,14 +65,7 @@ export class VectorStoreFactory {
         break;
 
       case 'cloud-chroma':
-        // 检查是否在浏览器环境中
-        // if (typeof window !== 'undefined') {
-        //   throw new Error('CloudChromaVectorStore is not supported in browser environment. Please use IndexedDBVectorStore instead.');
-        // }
         vectorStore = new CloudChromaVectorStore(
-          config.apiKey,
-          config.tenant,
-          config.database,
           config.collectionName
         );
         break;

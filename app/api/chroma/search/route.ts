@@ -1,14 +1,45 @@
 import { NextResponse } from 'next/server';
-import { vectorStoreService } from '@/services/vector-store-service';
-import type { FilterOptions } from '@/types/icon';
+import { ChromaCollection } from '@/libs/chroma';
 
 // 处理向量搜索的 API 路由
 export async function POST(request: Request) {
   try {
-    const { query, filters, limit } = await request.json();
+    const body = await request.json();
+    const { queryEmbedding, filters, limit, collectionName } = body;
     
-    // 在服务端执行搜索
-    const results = await vectorStoreService.searchIcons(query, filters as FilterOptions, limit || 20);
+    if (!queryEmbedding || !Array.isArray(queryEmbedding)) {
+      return NextResponse.json(
+        { success: false, error: 'Missing or invalid queryEmbedding parameter' },
+        { status: 400 }
+      );
+    }
+    
+    // 使用全局集合实例
+    const collection = new ChromaCollection(
+      collectionName || 'gimme_icon_collection'
+    );
+    
+    // 执行向量搜索
+    const searchResults = await collection.query({
+      queryEmbeddings: [queryEmbedding],
+      nResults: limit || 20,
+      where: filters,
+    });
+    
+    // 转换结果格式
+    let results: Array<{
+      id: string;
+      score: number;
+      metadata?: Record<string, string[] | string | number>;
+    }> = [];
+    
+    if (searchResults.ids && searchResults.ids.length > 0 && searchResults.ids[0]) {
+      results = searchResults.ids[0].map((id: string, index: number) => ({
+        id,
+        score: searchResults.distances?.[0]?.[index] || 0,
+        metadata: searchResults.metadatas?.[0]?.[index] || undefined,
+      }));
+    }
     
     return NextResponse.json({ success: true, results });
   } catch (error) {

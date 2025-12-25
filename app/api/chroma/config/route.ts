@@ -1,38 +1,52 @@
 import { NextResponse } from 'next/server';
-import { vectorStoreService } from '@/services/vector-store-service';
-import type { VectorStoreConfig } from '@/services/vector-stores/VectorStoreFactory';
+import { getGlobalChromaClient } from '@/libs/chroma';
 
-// 处理向量存储配置的 API 路由
-export async function POST(request: Request) {
+// 测试 Chroma 连接的 API 路由
+export async function POST() {
   try {
-    const config: VectorStoreConfig = await request.json();
+    // 测试连接
+    const client = await getGlobalChromaClient();
     
-    // 如果是云向量存储，在服务端处理
-    if (config.type === 'cloud-chroma') {
-      await vectorStoreService.switchVectorStore(config);
-      return NextResponse.json({ success: true, message: 'Vector store configuration applied successfully' });
-    }
+    // 尝试获取一个测试集合来验证连接
+    await client.getOrCreateCollection({
+      name: 'test_connection',
+      metadata: {
+        description: "Test connection collection",
+        createdAt: new Date().toISOString(),
+      },
+    });
     
-    // 其他类型的向量存储可以在客户端处理，直接返回成功
-    return NextResponse.json({ success: true, message: 'Client-side vector store configuration' });
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Chroma connection test successful' 
+    });
   } catch (error) {
-    console.error('Failed to apply vector store configuration:', error);
+    console.error('Chroma connection test failed:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to apply vector store configuration' },
+      { success: false, error: 'Chroma connection test failed' },
       { status: 500 }
     );
   }
 }
 
-// 获取当前向量存储配置
+// 获取当前 Chroma 配置状态
 export async function GET() {
   try {
-    const config = vectorStoreService.getVectorStoreConfig();
-    return NextResponse.json({ success: true, config });
+    // 检查环境变量是否配置
+    const hasEnvVars = !!(process.env.CHROMA_API_KEY && 
+                         process.env.CHROMA_TENANT && 
+                         process.env.CHROMA_DATABASE);
+    
+    return NextResponse.json({ 
+      success: true, 
+      configured: hasEnvVars,
+      tenant: process.env.CHROMA_TENANT,
+      database: process.env.CHROMA_DATABASE,
+    });
   } catch (error) {
-    console.error('Failed to get vector store configuration:', error);
+    console.error('Failed to get Chroma configuration status:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to get vector store configuration' },
+      { success: false, error: 'Failed to get Chroma configuration status' },
       { status: 500 }
     );
   }

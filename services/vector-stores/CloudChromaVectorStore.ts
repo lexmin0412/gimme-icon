@@ -2,31 +2,9 @@ import type { IVectorStore, VectorStoreItem } from "./IVectorStore";
 
 export class CloudChromaVectorStore implements IVectorStore {
   private initialized: boolean = false;
-  private client!: {
-    getOrCreateCollection: (options: any) => Promise<any>;
-    deleteCollection: (options: any) => Promise<any>;
-  };
-  private collection!: {
-    upsert: (options: any) => Promise<void>;
-    get: (options: any) => Promise<any>;
-    query: (options: any) => Promise<any>;
-    delete: (options: any) => Promise<void>;
-    count: () => Promise<number>;
-  };
   private collectionName: string = "gimme_icon_collection";
-  private apiKey: string;
-  private tenant: string;
-  private database: string;
 
-  constructor(
-    apiKey: string,
-    tenant: string,
-    database: string,
-    collectionName?: string
-  ) {
-    this.apiKey = apiKey;
-    this.tenant = tenant;
-    this.database = database;
+  constructor(collectionName?: string) {
     if (collectionName) {
       this.collectionName = collectionName;
     }
@@ -36,36 +14,12 @@ export class CloudChromaVectorStore implements IVectorStore {
     if (this.initialized) return;
 
     try {
-      // 检查是否在浏览器环境中
-      // if (typeof window !== "undefined") {
-      //   throw new Error(
-      //     "CloudChromaVectorStore is not supported in browser environment. Please use IndexedDBVectorStore instead."
-      //   );
-      // }
-
-      // 动态导入ChromaDB（仅在Node.js环境可用）
-      const { CloudClient } = await import("chromadb");
-
-      // 创建ChromaDB客户端，连接到云服务
-      this.client = new CloudClient({
-        apiKey: this.apiKey,
-        tenant: this.tenant,
-        database: this.database,
-      });
-
-      // 创建或获取集合
-      this.collection = await this.client.getOrCreateCollection({
-        name: this.collectionName,
-        metadata: {
-          description: "Gimme Icon Vector Store Collection",
-          createdAt: new Date().toISOString(),
-        },
-      });
+      // CloudChromaVectorStore 是给客户端使用的，不需要在服务端初始化
+      // 实际的初始化会在第一次 API 调用时进行
 
       this.initialized = true;
       console.log("CloudChromaVectorStore initialized successfully");
       console.log(`Collection name: ${this.collectionName}`);
-      console.log(`Database: ${this.database}`);
     } catch (error) {
       console.error("Failed to initialize CloudChromaVectorStore:", error);
       throw error;
@@ -73,51 +27,50 @@ export class CloudChromaVectorStore implements IVectorStore {
   }
 
   async addVector(item: VectorStoreItem): Promise<void> {
-    await this.collection.upsert({
-      ids: [item.id],
-      embeddings: [item.embedding],
-      metadatas: item.metadata ? [item.metadata] : undefined,
-    });
+    await this.addVectors([item]);
   }
 
   async addVectors(items: VectorStoreItem[]): Promise<void> {
-    const ids = items.map((item) => item.id);
-    const embeddings = items.map((item) => item.embedding);
-    const metadatas = items.map((item) => item.metadata);
-
-    await this.collection.upsert({
-      ids,
-      embeddings,
-      metadatas: metadatas.some((m) => m) ? metadatas : undefined,
+    const response = await fetch("/api/chroma/add-vectors", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ 
+        items,
+        collectionName: this.collectionName 
+      }),
     });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || "Failed to add vectors");
+    }
   }
 
   async getVector(id: string): Promise<VectorStoreItem | undefined> {
-    const result = await this.collection.get({
-      ids: [id],
-    });
-
-    if (!result.ids || result.ids.length === 0) {
-      return undefined;
-    }
-
-    return {
-      id: result.ids[0],
-      embedding: result.embeddings?.[0] || [],
-      metadata: result.metadatas?.[0] || undefined,
-    };
+    const vectors = await this.getVectors([id]);
+    return vectors.length > 0 ? vectors[0] : undefined;
   }
 
   async getVectors(ids: string[]): Promise<VectorStoreItem[]> {
-    const result = await this.collection.get({
-      ids,
+    const response = await fetch("/api/chroma/get-vectors", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ 
+        ids,
+        collectionName: this.collectionName 
+      }),
     });
 
-    return result.ids.map((id: string, index: number) => ({
-      id,
-      embedding: result.embeddings?.[index] || [],
-      metadata: result.metadatas?.[index] || undefined,
-    }));
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || "Failed to get vectors");
+    }
+
+    return data.vectors || [];
   }
 
   async searchSimilarVectors(
@@ -131,64 +84,109 @@ export class CloudChromaVectorStore implements IVectorStore {
       metadata?: Record<string, string[] | string | number>;
     }[]
   > {
-    const result = await this.collection.query({
-      queryEmbeddings: [queryVector],
-      nResults: limit,
-      where: filters,
+    const response = await fetch("/api/chroma/search", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        queryEmbedding: queryVector,
+        limit,
+        filters,
+        collectionName: this.collectionName,
+      }),
     });
 
-    // 转换结果格式
-    if (!result.ids || result.ids.length === 0 || !result.ids[0] || result.ids[0].length === 0) {
-      return [];
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || "Failed to search vectors");
     }
 
-    return result.ids[0].map((id: string, index: number) => ({
-      id,
-      score: result.distances?.[0]?.[index] || 0,
-      metadata: result.metadatas?.[0]?.[index] || undefined,
-    }));
+    return data.results || [];
   }
 
   async deleteVector(id: string): Promise<void> {
-    await this.collection.delete({
-      ids: [id],
+    const response = await fetch("/api/chroma/delete-vector", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ 
+        id,
+        collectionName: this.collectionName 
+      }),
     });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || "Failed to delete vector");
+    }
   }
 
   async clear(): Promise<void> {
-    // 删除并重新创建集合
-    await this.client.deleteCollection({
-      name: this.collectionName,
+    const response = await fetch("/api/chroma/clear", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ 
+        collectionName: this.collectionName 
+      }),
     });
 
-    this.collection = await this.client.getOrCreateCollection({
-      name: this.collectionName,
-      metadata: {
-        description: "Gimme Icon Vector Store Collection",
-        createdAt: new Date().toISOString(),
-      },
-    });
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || "Failed to clear vector store");
+    }
   }
 
   async hasVector(id: string): Promise<boolean> {
-    const result = await this.collection.get({
-      ids: [id],
+    const response = await fetch("/api/chroma/has-vector", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ 
+        id,
+        collectionName: this.collectionName 
+      }),
     });
 
-    return result.ids.length > 0;
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || "Failed to check vector existence");
+    }
+
+    return data.hasVector || false;
   }
 
   async getVectorCount(): Promise<number> {
-    const count = await this.collection.count();
-    return count;
+    const response = await fetch(`/api/chroma/count?collectionName=${encodeURIComponent(this.collectionName)}`);
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || "Failed to get vector count");
+    }
+
+    return data.count || 0;
   }
 
   async updateVector(id: string, newEmbedding: number[], metadata?: Record<string, string[] | string | number>): Promise<void> {
-    // 使用upsert操作更新向量，Cloud ChromaDB的upsert会创建或更新向量
-    await this.collection.upsert({
-      ids: [id],
-      embeddings: [newEmbedding],
-      metadatas: metadata ? [metadata] : undefined
+    const response = await fetch("/api/chroma/update-vector", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ 
+        id, 
+        embedding: newEmbedding, 
+        metadata,
+        collectionName: this.collectionName 
+      }),
     });
+
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || "Failed to update vector");
+    }
   }
 }

@@ -34,7 +34,7 @@ class VectorStoreService {
   private vectorStore: IVectorStore;
   private vectorStoreConfig: VectorStoreConfig;
 
-  constructor(vectorStoreConfig: VectorStoreConfig = { type: "indexed-db" }) {
+  constructor(vectorStoreConfig: VectorStoreConfig = { type: 'indexed-db' }) {
     // 如果是indexed-db类型且没有指定storeName，则使用当前模型ID生成storeName
     if (vectorStoreConfig.type === "indexed-db" && !vectorStoreConfig.storeName) {
       vectorStoreConfig = {
@@ -141,6 +141,7 @@ class VectorStoreService {
           shouldGenerateVectors = true;
         }
 
+        console.log('shouldGenerateVectors', shouldGenerateVectors)
         if (shouldGenerateVectors) {
           // 为每个图标生成向量，添加超时处理
           const generateEmbeddingsPromise = async () => {
