@@ -35,7 +35,7 @@ export const loadIcons = async (libNames: string[]) => {
         [] as string[]
       );
 
-      const iconList = [...icons.uncategorized, ...categoriedIcons];
+      const iconList = [...icons.uncategorized || [], ...categoriedIcons];
 
       return iconList.map((key) => {
         return {
