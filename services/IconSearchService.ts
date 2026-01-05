@@ -11,6 +11,7 @@ import { withTimeout } from "../utils";
 import { loadIcons } from "./icons";
 
 import { generateDescriptionForIcon } from "@/utils";
+import { INITIAL_LOAD_COUNT } from "@/constants";
 
 /**
  * 生成统一的向量存储名称
@@ -231,7 +232,7 @@ class IconSearchService {
   async searchIcons(
     query: string,
     filters: FilterOptions,
-    limit: number = 50
+    limit: number = INITIAL_LOAD_COUNT
   ): Promise<SearchResult[]> {
     if (!this.initialized) {
       await this.initialize();

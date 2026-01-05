@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { SearchResult } from "@/types/icon";
 import { Icon } from "@iconify/react";
+import { INITIAL_LOAD_COUNT } from "@/constants";
 
 interface IconGridProps {
   results: SearchResult[];
@@ -9,8 +10,8 @@ interface IconGridProps {
 }
 
 const IconGrid: React.FC<IconGridProps> = ({ results, onIconClick }) => {
-  // 首屏加载50个图标，每次加载50个
-  const [visibleCount, setVisibleCount] = useState(50);
+  // 首屏加载INITIAL_LOAD_COUNT个图标，每次加载INITIAL_LOAD_COUNT个
+  const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD_COUNT);
   const [isLoading, setIsLoading] = useState(false);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
@@ -18,7 +19,7 @@ const IconGrid: React.FC<IconGridProps> = ({ results, onIconClick }) => {
   const prevResultsRef = useRef(results);
   useEffect(() => {
     if (prevResultsRef.current !== results) {
-      setVisibleCount(50);
+      setVisibleCount(INITIAL_LOAD_COUNT);
       prevResultsRef.current = results;
     }
   }, [results]);
@@ -30,7 +31,7 @@ const IconGrid: React.FC<IconGridProps> = ({ results, onIconClick }) => {
     setIsLoading(true);
     // 模拟加载延迟
     setTimeout(() => {
-      setVisibleCount((prevCount) => Math.min(prevCount + 50, results.length));
+      setVisibleCount((prevCount) => Math.min(prevCount + INITIAL_LOAD_COUNT, results.length));
       setIsLoading(false);
     }, 500);
   }, [isLoading, visibleCount, results.length]);
