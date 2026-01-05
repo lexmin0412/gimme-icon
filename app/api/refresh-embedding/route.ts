@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { ChromaCollection } from '@/libs/chroma';
 import type { Icon } from '@/types/icon';
+import { INITIAL_LOAD_COUNT } from '@/constants';
 
 type EmbeddingItem = {
   icon: Icon;
@@ -47,12 +48,11 @@ export async function POST(request: Request) {
       
       // Batch update vector in Chroma
       // Handle batch limit (e.g., 300 items per request)
-      const BATCH_SIZE = 300;
       const totalItems = items.length;
       let processedCount = 0;
 
-      for (let i = 0; i < totalItems; i += BATCH_SIZE) {
-        const batchItems = items.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < totalItems; i += INITIAL_LOAD_COUNT) {
+        const batchItems = items.slice(i, i + INITIAL_LOAD_COUNT);
         
         // Prepare batch data
         const ids = batchItems.map(item => item.icon.id);
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
         });
         
         processedCount += batchItems.length;
-        console.log(`Processed batch ${i / BATCH_SIZE + 1}: ${batchItems.length} items`);
+        console.log(`Processed batch ${i / INITIAL_LOAD_COUNT + 1}: ${batchItems.length} items`);
       }
       
       console.log(`Refreshed vectors for ${processedCount} icons`);
