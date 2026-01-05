@@ -100,7 +100,7 @@ const ConsolePage: React.FC = () => {
       } else {
         const api = `https://api.iconify.design/search?query=${encodeURIComponent(
           q
-        )}&limit=${INITIAL_LOAD_COUNT}&pretty=1`;
+        )}&prefix=${activeLibrary}&limit=${INITIAL_LOAD_COUNT}&pretty=1`;
         const resp = await fetch(api);
         const data = await resp.json();
         const icons: string[] = Array.isArray(data.icons) ? data.icons : [];
