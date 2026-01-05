@@ -191,12 +191,12 @@ const ConsolePage: React.FC = () => {
 
   return (
     <div className="flex h-screen bg-background">
-      <aside className="w-64 border-r bg-muted/10 flex flex-col">
+      <aside className="w-64 border-r bg-muted/10 flex flex-col h-full overflow-hidden">
         <div className="p-4 border-b">
           <h2 className="text-lg font-semibold tracking-tight">图标库</h2>
           <p className="text-sm text-muted-foreground">选择一个库进行操作</p>
         </div>
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 overflow-auto">
           <div className="p-2 space-y-1">
             {isLoadingLibraries ? (
               <div className="space-y-2 p-2">
@@ -224,10 +224,9 @@ const ConsolePage: React.FC = () => {
       </aside>
 
       <main className="flex-1 overflow-hidden flex flex-col">
-        <div className="p-6 pb-0">
-          <div className="flex items-center justify-between mb-6">
+        <div className="px-6 py-4 pb-0">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Console</h1>
               {activeLibraryInfo && (
                 <p className="text-muted-foreground">
                   当前库：{activeLibraryInfo.name} ({activeLibraryInfo.total} icons)
@@ -237,8 +236,8 @@ const ConsolePage: React.FC = () => {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col px-6 overflow-hidden">
-          <div className="flex items-center justify-between border-b pb-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex items-center justify-between border-b px-6 pb-4">
             <TabsList>
               <TabsTrigger value="search">搜索</TabsTrigger>
               <TabsTrigger value="vectorize">向量化操作</TabsTrigger>
@@ -246,7 +245,7 @@ const ConsolePage: React.FC = () => {
           </div>
 
           <TabsContent value="search" className="flex-1 overflow-hidden flex flex-col pt-4 data-[state=inactive]:hidden">
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-6 px-6">
               <div className="flex-1">
                 <SearchBar
                   onSearch={handleSearch}
@@ -269,7 +268,7 @@ const ConsolePage: React.FC = () => {
                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                  </div>
               ) : (
-                <div className="pb-6">
+                <div className="px-4">
                    <IconGrid
                     results={searchResults}
                     onIconClick={() => {}}
@@ -280,7 +279,7 @@ const ConsolePage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="vectorize" className="flex-1 overflow-hidden flex flex-col pt-4 data-[state=inactive]:hidden">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 px-6">
               <div className="flex items-center gap-3">
                 <Button
                   variant={isSelectionMode ? "secondary" : "outline"}
@@ -311,9 +310,9 @@ const ConsolePage: React.FC = () => {
               </Button>
             </div>
 
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 overflow-auto">
               {isLoadingIcons ? (
-                 <div className="space-y-4 pb-6">
+                 <div className="space-y-4 p-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
                       {Array.from({ length: 12 }).map((_, i) => (
                         <Skeleton key={i} className="h-32 w-full rounded-lg" />
@@ -321,7 +320,7 @@ const ConsolePage: React.FC = () => {
                     </div>
                  </div>
               ) : (
-                <div className="pb-6">
+                <div className="px-6">
                   <IconGrid
                     results={iconResults}
                     onIconClick={(r) => setSelectedIcon(r.icon)}
