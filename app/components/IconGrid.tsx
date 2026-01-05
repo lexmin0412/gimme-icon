@@ -82,7 +82,7 @@ const IconGrid: React.FC<IconGridProps> = ({
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 pt-1">
         {visibleResults.map((result) => {
           const isSelected = selectedIds.has(result.icon.id);
           
@@ -96,7 +96,7 @@ const IconGrid: React.FC<IconGridProps> = ({
                   onIconClick(result);
                 }
               }}
-              className={`group cursor-pointer transition-all 
+              className={`group cursor-pointer transition-all py-0 
                 ${isSelected 
                   ? 'border-primary ring-2 ring-primary' 
                   : 'hover:shadow-md hover:border-primary/50'
