@@ -290,7 +290,7 @@ const ConsolePage: React.FC = () => {
               </div>
             </div>
             
-            <ScrollArea className="flex-1">
+            <ScrollArea className="flex-1 overflow-auto">
               {isSearching ? (
                  <div className="flex items-center justify-center py-8">
                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
