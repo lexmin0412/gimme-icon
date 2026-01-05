@@ -7,9 +7,18 @@ import { INITIAL_LOAD_COUNT } from "@/constants";
 interface IconGridProps {
   results: SearchResult[];
   onIconClick: (result: SearchResult) => void;
+  selectionMode?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (result: SearchResult) => void;
 }
 
-const IconGrid: React.FC<IconGridProps> = ({ results, onIconClick }) => {
+const IconGrid: React.FC<IconGridProps> = ({ 
+  results, 
+  onIconClick,
+  selectionMode = false,
+  selectedIds = new Set(),
+  onToggleSelect
+}) => {
   // 首屏加载INITIAL_LOAD_COUNT个图标，每次加载INITIAL_LOAD_COUNT个
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD_COUNT);
   const [isLoading, setIsLoading] = useState(false);
@@ -72,23 +81,49 @@ const IconGrid: React.FC<IconGridProps> = ({ results, onIconClick }) => {
   return (
     <div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-        {visibleResults.map((result) => (
-          <div
-            key={result.icon.id}
-            onClick={() => onIconClick(result)}
-            className="group p-4 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer transition-all dark:bg-gray-800 dark:border-gray-700 dark:hover:border-blue-600"
-          >
-            <div className="flex items-center justify-center h-20 mb-3">
-              <Icon icon={`${result.icon.library}:${result.icon.name}`} width={36} height={36} />
+        {visibleResults.map((result) => {
+          const isSelected = selectedIds.has(result.icon.id);
+          
+          return (
+            <div
+              key={result.icon.id}
+              onClick={() => {
+                if (selectionMode && onToggleSelect) {
+                  onToggleSelect(result);
+                } else {
+                  onIconClick(result);
+                }
+              }}
+              className={`group p-4 bg-white border rounded-lg shadow-sm cursor-pointer transition-all dark:bg-gray-800 
+                ${isSelected 
+                  ? 'border-blue-500 ring-2 ring-blue-500 dark:border-blue-400 dark:ring-blue-400' 
+                  : 'border-gray-200 hover:shadow-md hover:border-blue-300 dark:border-gray-700 dark:hover:border-blue-600'
+                }`}
+            >
+              <div className="relative">
+                {selectionMode && (
+                  <div className="absolute top-0 right-0 z-10">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {}} // Handled by div onClick
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                    />
+                  </div>
+                )}
+                <div className="flex items-center justify-center h-20 mb-3">
+                  <Icon icon={`${result.icon.library}:${result.icon.name}`} width={36} height={36} />
+                </div>
+              </div>
+              <h3 className="text-xs font-medium text-center text-gray-900 truncate dark:text-white">
+                {result.icon.name}
+              </h3>
+              <p className="text-xs text-center text-gray-500 truncate dark:text-gray-400">
+                {result.icon.library}
+              </p>
             </div>
-            <h3 className="text-xs font-medium text-center text-gray-900 truncate dark:text-white">
-              {result.icon.name}
-            </h3>
-            <p className="text-xs text-center text-gray-500 truncate dark:text-gray-400">
-              {result.icon.library}
-            </p>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* 加载更多指示器 */}
