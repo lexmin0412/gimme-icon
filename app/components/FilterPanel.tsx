@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { FilterOptions } from '@/types/icon';
 import { iconSearchService } from '@/services/IconSearchService';
-import type { VectorStoreConfig } from '@/services/vector-store-service';
+import type { VectorStoreConfig, VectorStoreType } from '@/services/vector-store-service';
 import { useToast } from './ToastProvider';
 
 interface FilterPanelProps {
@@ -95,8 +95,12 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
     setIsConfiguring(true);
     
     try {
+      const type: VectorStoreType =
+        vectorStoreType === 'memory' ? 'indexed-db'
+        : vectorStoreType === 'local-chroma' ? 'local-chroma'
+        : 'cloud-chroma';
       const config: VectorStoreConfig = {
-        type: vectorStoreType as any,
+        type,
         ...(vectorStoreType === 'local-chroma' && {
           persistDirectory: './chromadb_data'
         }),

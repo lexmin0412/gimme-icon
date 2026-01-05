@@ -1,9 +1,36 @@
 import type { IVectorStore, VectorStoreItem, SearchResult } from './IVectorStore';
 
+type ChromaMetadata = Record<string, unknown>;
+
+interface ChromaGetResult {
+  ids: string[];
+  embeddings: number[][];
+  metadatas?: ChromaMetadata[];
+}
+
+interface ChromaQueryResult {
+  ids: string[][];
+  distances?: number[][];
+  metadatas?: ChromaMetadata[][];
+}
+
+interface ChromaCollection {
+  upsert(input: { ids: string[]; embeddings: number[][]; metadatas?: ChromaMetadata[] }): Promise<void>;
+  delete(input: { ids: string[] }): Promise<void>;
+  get(input: { ids: string[]; include: Array<'embeddings' | 'metadatas'> }): Promise<ChromaGetResult>;
+  query(input: { queryEmbeddings: number[][]; nResults: number; where?: Record<string, unknown> }): Promise<ChromaQueryResult>;
+  count(): Promise<number>;
+}
+
+interface ChromaClient {
+  getOrCreateCollection(input: { name: string; metadata?: ChromaMetadata }): Promise<ChromaCollection>;
+  deleteCollection(input: { name: string }): Promise<void>;
+}
+
 export class LocalChromaVectorStore implements IVectorStore {
   private initialized: boolean = false;
-  private client!: any;
-  private collection!: any;
+  private client!: ChromaClient;
+  private collection!: ChromaCollection;
   private collectionName!: string;
   private persistDirectory: string = './chromadb_data';
 
@@ -28,7 +55,7 @@ export class LocalChromaVectorStore implements IVectorStore {
       const { ChromaClient } = await import('chromadb');
       this.client = new ChromaClient({
         path: this.persistDirectory
-      });
+      }) as unknown as ChromaClient;
 
       this.collection = await this.client.getOrCreateCollection({
         name: this.collectionName,
@@ -36,7 +63,7 @@ export class LocalChromaVectorStore implements IVectorStore {
           description: 'Gimme Icon Vector Store Collection',
           createdAt: new Date().toISOString()
         }
-      });
+      }) as unknown as ChromaCollection;
 
       this.initialized = true;
       console.log('LocalChromaVectorStore initialized successfully');
@@ -59,26 +86,26 @@ export class LocalChromaVectorStore implements IVectorStore {
     await this.ensureInitialized();
     const ids = items.map(item => item.id);
     const embeddings = items.map(item => item.embedding);
-    const metadatas = items.map(item => item.metadata);
+    const metadatas = items.map(item => item.metadata as ChromaMetadata | undefined).filter(Boolean) as ChromaMetadata[];
 
     await this.collection.upsert({
       ids,
       embeddings,
-      metadatas: metadatas.some(m => m) ? metadatas : undefined
+      metadatas: metadatas.length > 0 ? metadatas : undefined
     });
   }
 
-  async updateVector(id: string, vector: number[], metadata?: Record<string, any>): Promise<void> {
+  async updateVector(id: string, vector: number[], metadata?: Record<string, unknown>): Promise<void> {
       await this.batchUpdateVectors([{ id, vector, metadata }]);
   }
 
-  async batchUpdateVectors(items: { id: string; vector: number[]; metadata?: Record<string, any> }[]): Promise<void> {
+  async batchUpdateVectors(items: { id: string; vector: number[]; metadata?: Record<string, unknown> }[]): Promise<void> {
       // Upsert handles updates
       await this.ensureInitialized();
       const vectorItems = items.map(item => ({
         id: item.id,
         embedding: item.vector,
-        metadata: item.metadata
+        metadata: item.metadata as ChromaMetadata | undefined
       }));
       await this.batchAddVectors(vectorItems);
   }
@@ -116,13 +143,13 @@ export class LocalChromaVectorStore implements IVectorStore {
   async searchVectors(
     queryVector: number[],
     limit: number,
-    filters?: Record<string, any>
+    filters?: Record<string, unknown>
   ): Promise<SearchResult[]> {
       await this.ensureInitialized();
       const result = await this.collection.query({
           queryEmbeddings: [queryVector],
           nResults: limit,
-          where: filters // Chroma filter format might be different, but assuming it matches for now
+          where: filters
       });
       
       const ids = result.ids[0];

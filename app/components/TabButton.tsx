@@ -1,4 +1,4 @@
-type TabType = "vectorModel" | "iconLibraries" | "vectorStore";
+type TabType = "vectorModel" | "vectorStore";
 
 interface TabButtonProps {
   tab: TabType;

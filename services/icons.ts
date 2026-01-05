@@ -3,13 +3,18 @@
  */
 export const getIconLibraries = async () => {
   const response = await fetch('https://api.iconify.design/collections');
-  const data = await response.json();
+  const data = await response.json() as Record<string, {
+    name: string;
+    total: number;
+    author: { name: string };
+    license: { title: string };
+  }>;
   return Object.entries(data).map(([prefix, info]) => ({
     prefix,
-    name: (info as any).name,
-    total: (info as any).total,
-    author: (info as any).author.name,
-    license: (info as any).license.title
+    name: info.name,
+    total: info.total,
+    author: info.author.name,
+    license: info.license.title
   }));
 };
 

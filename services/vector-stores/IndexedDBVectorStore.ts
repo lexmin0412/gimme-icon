@@ -53,7 +53,7 @@ export class IndexedDBVectorStore implements IVectorStore {
   async searchVectors(
     queryVector: number[],
     limit: number,
-    filters?: Record<string, any>
+    filters?: Record<string, unknown>
   ): Promise<SearchResult[]> {
     const vectors = await this.getAllVectors();
     
@@ -65,25 +65,16 @@ export class IndexedDBVectorStore implements IVectorStore {
         const metadataValue = vector.metadata[key];
         
         if (Array.isArray(value)) {
-           // If filter value is array, check if metadata value is in that array (OR logic)
-           // or if metadata value is array, check intersection?
-           // Usually filters: { category: ['outline', 'solid'] } means category IN ['outline', 'solid']
-           if (Array.isArray(metadataValue)) {
-             // If metadata is array (e.g. tags), check if any intersection
-             // But simple implementation: check exact match or containment
-             // Let's assume standard behavior:
-             // If filter is array, we want vectors where metadata[key] matches ANY of the filter values.
-             if (!value.includes(metadataValue)) return false; 
-             // Wait, if metadataValue is also array (like tags)?
-             // Then we usually check if there is intersection.
-             // But for now let's assume metadataValue is string for simple fields like library/category.
-             // For tags, it's an array.
-           } else {
-             if (!value.includes(metadataValue)) return false;
-           }
+          if (Array.isArray(metadataValue)) {
+            const metaArray = metadataValue as unknown[];
+            const filterArray = value as unknown[];
+            const hasIntersection = metaArray.some(mv => filterArray.includes(mv));
+            if (!hasIntersection) return false;
+          } else {
+            if (!value.includes(metadataValue)) return false;
+          }
         } else {
-          // Exact match
-           if (metadataValue !== value) return false;
+          if (metadataValue !== value) return false;
         }
       }
       return true;
@@ -147,11 +138,11 @@ export class IndexedDBVectorStore implements IVectorStore {
     await this.saveAllVectors(vectors);
   }
 
-  async updateVector(id: string, vector: number[], metadata?: Record<string, any>): Promise<void> {
+  async updateVector(id: string, vector: number[], metadata?: Record<string, unknown>): Promise<void> {
     await this.batchUpdateVectors([{ id, vector, metadata }]);
   }
 
-  async batchUpdateVectors(items: { id: string; vector: number[]; metadata?: Record<string, any> }[]): Promise<void> {
+  async batchUpdateVectors(items: { id: string; vector: number[]; metadata?: Record<string, unknown> }[]): Promise<void> {
     const vectors = await this.getAllVectors();
     const idMap = new Map(vectors.map((v, i) => [v.id, i]));
     let changed = false;

@@ -279,19 +279,12 @@ class IconSearchService {
       }
       const queryEmbedding = await embeddingService.generateEmbedding(query);
       if (useCloud) {
-        const vectorStoreFilters: Record<string, string[] | string> = {};
-        if (filters.libraries.length > 0) {
-          vectorStoreFilters.library = filters.libraries;
-        }
-        if (filters.categories.length > 0) {
-          vectorStoreFilters.category = filters.categories;
-        }
         const response = await fetch("/api/chroma/search", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ queryEmbedding, filters: vectorStoreFilters, limit }),
+          body: JSON.stringify({ queryEmbedding, limit }),
         });
         const data = await response.json();
         if (!data.success || !Array.isArray(data.results)) {
@@ -299,14 +292,41 @@ class IconSearchService {
         }
         const results: SearchResult[] = [];
         for (const r of data.results) {
-          const icon = this.icons.find((i) => i.id === r.id);
-          if (!icon) continue;
-          if (
-            filters.tags.length === 0 ||
-            filters.tags.some((tag) => icon.tags.includes(tag))
-          ) {
-            results.push({ icon, score: r.score });
+          let icon: Icon | undefined;
+          const meta = r.metadata as Record<string, unknown> | undefined;
+          if (meta) {
+            const id = String(r.id);
+            const name = String(meta.name ?? id.split("__")[1] ?? id);
+            const library = String(meta.library ?? id.split("__")[0] ?? "");
+            const category = String(meta.category ?? "");
+            const tagsRaw = meta.tags;
+            const synonymsRaw = meta.synonyms;
+            const tags =
+              typeof tagsRaw === "string"
+                ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean)
+                : Array.isArray(tagsRaw)
+                ? (tagsRaw as unknown[]).map((t) => String(t)).filter(Boolean)
+                : (name.includes("-") ? name.split("-") : [name]);
+            const synonyms =
+              typeof synonymsRaw === "string"
+                ? synonymsRaw.split(",").map((t) => t.trim()).filter(Boolean)
+                : Array.isArray(synonymsRaw)
+                ? (synonymsRaw as unknown[]).map((t) => String(t)).filter(Boolean)
+                : [];
+            icon = {
+              id,
+              name,
+              svg: "",
+              library,
+              category,
+              tags,
+              synonyms,
+            };
+          } else {
+            icon = this.icons.find((i) => i.id === r.id);
           }
+          if (!icon) continue;
+          results.push({ icon, score: r.score });
         }
         return results
           .sort((a, b) => b.score - a.score)

@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     let results: Array<{
       id: string;
       score: number;
-      metadata?: Record<string, string[] | string | number>;
+      metadata?: Record<string, string | number | boolean> | undefined;
     }> = [];
     
     if (searchResults.ids && searchResults.ids.length > 0 && searchResults.ids[0]) {
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
           const similarityScore = 1 - (clampedDistance / 2);
           return similarityScore;
         })(),
-        metadata: searchResults.metadatas?.[0]?.[index] || undefined,
+        metadata: (searchResults.metadatas?.[0]?.[index] as Record<string, string | number | boolean> | undefined) ?? undefined,
       }));
     }
     

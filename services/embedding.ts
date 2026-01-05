@@ -18,12 +18,20 @@ interface ProgressCallbackData {
 }
 
 interface ExtendedNavigator extends Navigator {
-  gpu?: any;
+  gpu?: unknown;
   deviceMemory?: number;
 }
 
+type FeatureExtraction = (
+  input: string | string[],
+  options?: {
+    pooling?: 'mean' | 'max';
+    normalize?: boolean;
+  }
+) => Promise<{ data: Float32Array }>;
+
 class EmbeddingService {
-  private embedder: any; // 使用 any 类型绕过类型检查，因为 pipeline 返回的类型复杂且不透明
+  private embedder: FeatureExtraction | null = null;
   private initialized: boolean = false;
   private useFallback: boolean = false; // 默认尝试使用真实模型
   private currentModelId: ModelId = AVAILABLE_MODELS.MULTILINGUAL; // 默认使用多语言模型
@@ -83,12 +91,12 @@ class EmbeddingService {
         // 尝试使用Xenova提供的量化模型版本，这是专门为浏览器优化的
         // 使用Promise.race确保在超时时间内完成
         console.time('加载模型耗时');
-        this.embedder = await Promise.race([pipelinePromise, timeoutPromise]);
+        this.embedder = await Promise.race([pipelinePromise, timeoutPromise]) as FeatureExtraction;
         console.timeEnd('加载模型耗时');
         
         console.log('=== Model Initialization Complete ===');
         console.log('Embedder type:', typeof this.embedder);
-        console.log('Embedder object keys:', this.embedder ? Object.keys(this.embedder) : 'undefined');
+        console.log('Embedder object keys:', this.embedder ? Object.keys(this.embedder as object) : 'undefined');
         
         this.initialized = true;
         this.useFallback = false;

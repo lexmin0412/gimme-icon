@@ -41,11 +41,11 @@ export class CloudChromaVectorStore implements IVectorStore {
     }
   }
 
-  async updateVector(id: string, vector: number[], metadata?: Record<string, any>): Promise<void> {
+  async updateVector(id: string, vector: number[], metadata?: Record<string, unknown>): Promise<void> {
     await this.batchUpdateVectors([{ id, vector, metadata }]);
   }
 
-  async batchUpdateVectors(items: { id: string; vector: number[]; metadata?: Record<string, any> }[]): Promise<void> {
+  async batchUpdateVectors(items: { id: string; vector: number[]; metadata?: Record<string, unknown> }[]): Promise<void> {
     // Reuse addVectors since it uses upsert
     const vectorItems = items.map(item => ({
       id: item.id,
@@ -104,7 +104,7 @@ export class CloudChromaVectorStore implements IVectorStore {
   async searchVectors(
     queryVector: number[],
     limit: number,
-    filters?: Record<string, any>
+    filters?: Record<string, unknown>
   ): Promise<SearchResult[]> {
     const response = await fetch("/api/chroma/search", {
       method: "POST",

@@ -1,13 +1,13 @@
 export interface VectorStoreItem {
   id: string;
   embedding: number[];
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface SearchResult {
   id: string;
   score: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface IVectorStore {
@@ -25,7 +25,7 @@ export interface IVectorStore {
   searchVectors(
     queryVector: number[],
     limit: number,
-    filters?: Record<string, any>
+    filters?: Record<string, unknown>
   ): Promise<SearchResult[]>;
 
   /**
@@ -58,13 +58,13 @@ export interface IVectorStore {
    * @param vector New embedding vector
    * @param metadata New metadata
    */
-  updateVector(id: string, vector: number[], metadata?: Record<string, any>): Promise<void>;
+  updateVector(id: string, vector: number[], metadata?: Record<string, unknown>): Promise<void>;
 
   /**
    * Batch update vectors
    * @param items Items to update
    */
-  batchUpdateVectors(items: { id: string; vector: number[]; metadata?: Record<string, any> }[]): Promise<void>;
+  batchUpdateVectors(items: { id: string; vector: number[]; metadata?: Record<string, unknown> }[]): Promise<void>;
 
   /**
    * Delete a vector by ID
