@@ -4,7 +4,17 @@ import type { Icon } from '@/types/icon';
 import { useToast } from './ToastProvider';
 import { Icon as IconifyIcon } from '@iconify/react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { embeddingService } from '@/services/embedding';
+import { Copy, Plus, RefreshCw } from 'lucide-react';
 
 interface IconPreviewProps {
   icon: Icon | null;
@@ -18,6 +28,16 @@ const IconPreview: React.FC<IconPreviewProps> = ({ icon, onClose, onTagAdded }) 
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [tagError, setTagError] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // If icon is null, the Dialog should not be open.
+  // We can control open state based on icon existence.
+  const isOpen = !!icon;
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      onClose();
+    }
+  };
 
   if (!icon) return null;
 
@@ -100,8 +120,7 @@ const IconPreview: React.FC<IconPreviewProps> = ({ icon, onClose, onTagAdded }) 
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          icon: icon,
-          embedding: embedding,
+          items: [{ icon: icon, embedding: embedding }],
         }),
       });
 
@@ -121,89 +140,79 @@ const IconPreview: React.FC<IconPreviewProps> = ({ icon, onClose, onTagAdded }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[rgba(0,0,0,0.7)]">
-      <div className="relative w-full max-w-md p-6 bg-white rounded-lg shadow-xl dark:bg-gray-800">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
-        <div className="flex flex-col items-center mb-6">
-          <div className="p-6 bg-gray-100 rounded-lg dark:bg-gray-700">
-            <IconifyIcon icon={`${icon.library}:${icon.name}`} width={36} height={36} />
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <div className="flex flex-col items-center gap-4">
+             <div className="p-4 bg-muted rounded-lg">
+                <IconifyIcon icon={`${icon.library}:${icon.name}`} width={48} height={48} />
+             </div>
+             <div className="text-center">
+                <DialogTitle className="text-xl">{icon.name}</DialogTitle>
+                <DialogDescription>
+                  {icon.library} - {icon.category}
+                </DialogDescription>
+             </div>
           </div>
-          <h2 className="mt-4 text-xl font-bold text-gray-900 dark:text-white">{icon.name}</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{icon.library} - {icon.category}</p>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="mt-2 gap-2 text-gray-700 hover:text-gray-900"
-            onClick={handleRefreshEmbedding}
-            disabled={isRefreshing}
-          >
-            <IconifyIcon icon="material-symbols:refresh" className={isRefreshing ? "animate-spin" : ""} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh Embedding Data'}
-          </Button>
-        </div>
+        </DialogHeader>
 
-        <div className="mb-6">
-          <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Tags</h3>
-          <div className="flex flex-wrap gap-2">
-            {icon.tags.map((tag, index) => (
-              <span 
-                key={index} 
-                className="px-3 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-full dark:bg-blue-900 dark:text-blue-200"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Add New Tag</h3>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              placeholder="Enter tag..."
-              className="flex-1 px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              disabled={isAddingTag}
-            />
-            <button
-              onClick={handleAddTag}
-              disabled={isAddingTag || !newTag.trim()}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600"
+        <div className="flex justify-center">
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-2 text-muted-foreground"
+                onClick={handleRefreshEmbedding}
+                disabled={isRefreshing}
             >
-              {isAddingTag ? 'Adding...' : 'Add'}
-            </button>
-          </div>
-          {tagError && (
-            <p className="mt-1 text-xs text-red-600 dark:text-red-400">{tagError}</p>
-          )}
+                <RefreshCw className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh Embedding Data'}
+            </Button>
+        </div>
+        
+        <div className="space-y-4 py-2">
+            <div>
+                <h4 className="mb-2 text-sm font-medium">Tags</h4>
+                <div className="flex flex-wrap gap-2">
+                    {icon.tags.map((tag, index) => (
+                    <Badge key={index} variant="secondary">
+                        {tag}
+                    </Badge>
+                    ))}
+                    {icon.tags.length === 0 && <span className="text-xs text-muted-foreground">No tags</span>}
+                </div>
+            </div>
+            
+            <div className="space-y-2">
+                 <h4 className="text-sm font-medium">Add New Tag</h4>
+                 <div className="flex gap-2">
+                    <Input
+                        value={newTag}
+                        onChange={(e) => setNewTag(e.target.value)}
+                        placeholder="Enter tag..."
+                        disabled={isAddingTag}
+                        className="h-9"
+                    />
+                    <Button onClick={handleAddTag} disabled={isAddingTag || !newTag.trim()} size="sm">
+                        {isAddingTag ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <Plus className="h-4 w-4" />}
+                        <span className="sr-only">Add</span>
+                    </Button>
+                 </div>
+                 {tagError && (
+                    <p className="text-xs text-destructive">{tagError}</p>
+                 )}
+            </div>
         </div>
 
-        <div className="flex gap-4">
-          <button
-            onClick={handleCopySvg}
-            className="flex-1 px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600"
-          >
-            Copy SVG
-          </button>
-          <button
-            onClick={handleCopyName}
-            className="flex-1 px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 dark:bg-gray-700 dark:text-gray-200"
-          >
-            Copy Name
-          </button>
+        <div className="flex gap-2 pt-2">
+            <Button className="flex-1" onClick={handleCopySvg}>
+                <Copy className="mr-2 h-4 w-4" /> Copy SVG
+            </Button>
+             <Button variant="secondary" className="flex-1" onClick={handleCopyName}>
+                <Copy className="mr-2 h-4 w-4" /> Copy Name
+            </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

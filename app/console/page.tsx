@@ -8,6 +8,14 @@ import { getIconLibraries, loadIcons } from "@/services/icons";
 import { iconSearchService } from "@/services/IconSearchService";
 import { embeddingService } from "@/services/embedding";
 import { INITIAL_LOAD_COUNT } from "@/constants";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Loader2 } from "lucide-react";
 
 type LibraryInfo = {
   prefix: string;
@@ -22,8 +30,6 @@ const ConsolePage: React.FC = () => {
   const [activeLibrary, setActiveLibrary] = useState<string>("");
   const [isLoadingLibraries, setIsLoadingLibraries] = useState<boolean>(false);
 
-  const [activeTab, setActiveTab] = useState<"search" | "vectorize">("search");
-
   // Search tab
   const [query, setQuery] = useState<string>("");
   const [useVectorSearch, setUseVectorSearch] = useState<boolean>(false);
@@ -37,6 +43,9 @@ const ConsolePage: React.FC = () => {
   const [selectedIconIds, setSelectedIconIds] = useState<Set<string>>(new Set());
   const [selectedIcon, setSelectedIcon] = useState<Icon | null>(null);
   const [isBatchEmbedding, setIsBatchEmbedding] = useState<boolean>(false);
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<string>("search");
 
   const activeLibraryInfo = useMemo(
     () => libraries.find((l) => l.prefix === activeLibrary),
@@ -86,7 +95,6 @@ const ConsolePage: React.FC = () => {
   }, [activeLibrary, activeTab]);
 
   const handleSearch = async (q: string) => {
-    setQuery(q);
     if (!activeLibrary) return;
     try {
       setIsSearching(true);
@@ -182,157 +190,154 @@ const ConsolePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="flex h-screen">
-        <aside className="w-64 border-r border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
-            图标库
-          </h2>
-          {isLoadingLibraries ? (
-            <div className="text-xs text-gray-500 dark:text-gray-400">加载中...</div>
-          ) : (
-            <div className="space-y-2">
-              {libraries.map((lib) => (
-                <button
-                  key={lib.prefix}
-                  onClick={() => setActiveLibrary(lib.prefix)}
-                  className={`w-full text-left px-3 py-2 rounded-md text-sm ${
-                    activeLibrary === lib.prefix
-                      ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                      : "hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
-                  }`}
-                >
-                  <div className="flex justify-between">
-                    <span className="truncate">{lib.name}</span>
-                    <span className="ml-2 text-gray-500 dark:text-gray-400">
-                      {lib.total} icons
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </aside>
-
-        <main className="flex-1 p-6 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <button
-                className={`px-3 py-1.5 text-sm rounded-md ${
-                  activeTab === "search"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 dark:bg-gray-800 dark:text-gray-200 text-gray-700"
-                }`}
-                onClick={() => setActiveTab("search")}
-              >
-                搜索
-              </button>
-              <button
-                className={`px-3 py-1.5 text-sm rounded-md ${
-                  activeTab === "vectorize"
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-200 dark:bg-gray-800 dark:text-gray-200 text-gray-700"
-                }`}
-                onClick={() => setActiveTab("vectorize")}
-              >
-                向量化操作
-              </button>
-            </div>
-            {activeLibraryInfo && (
-              <div className="text-xs text-gray-500 dark:text-gray-400">
-                当前库：{activeLibraryInfo.name}（{activeLibraryInfo.total} icons）
+    <div className="flex h-screen bg-background">
+      <aside className="w-64 border-r bg-muted/10 flex flex-col">
+        <div className="p-4 border-b">
+          <h2 className="text-lg font-semibold tracking-tight">图标库</h2>
+          <p className="text-sm text-muted-foreground">选择一个库进行操作</p>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="p-2 space-y-1">
+            {isLoadingLibraries ? (
+              <div className="space-y-2 p-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Skeleton key={i} className="h-9 w-full" />
+                ))}
               </div>
+            ) : (
+              libraries.map((lib) => (
+                <Button
+                  key={lib.prefix}
+                  variant={activeLibrary === lib.prefix ? "secondary" : "ghost"}
+                  className="w-full justify-between font-normal"
+                  onClick={() => setActiveLibrary(lib.prefix)}
+                >
+                  <span className="truncate">{lib.name}</span>
+                  <Badge variant="outline" className="ml-2 text-xs font-normal">
+                    {lib.total}
+                  </Badge>
+                </Button>
+              ))
             )}
           </div>
+        </ScrollArea>
+      </aside>
 
-          {activeTab === "search" && (
+      <main className="flex-1 overflow-hidden flex flex-col">
+        <div className="p-6 pb-0">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex-1">
-                  <SearchBar
-                    onSearch={handleSearch}
-                    placeholder={`在 ${activeLibrary || "库"} 中搜索...`}
-                  />
-                </div>
-                <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                  <input
-                    type="checkbox"
-                    checked={useVectorSearch}
-                    onChange={(e) => setUseVectorSearch(e.target.checked)}
-                    className="rounded text-blue-600 dark:text-blue-400 focus:ring-blue-500"
-                  />
-                  向量化搜索（Chroma）
-                </label>
+              <h1 className="text-2xl font-bold tracking-tight">Console</h1>
+              {activeLibraryInfo && (
+                <p className="text-muted-foreground">
+                  当前库：{activeLibraryInfo.name} ({activeLibraryInfo.total} icons)
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col px-6 overflow-hidden">
+          <div className="flex items-center justify-between border-b pb-4">
+            <TabsList>
+              <TabsTrigger value="search">搜索</TabsTrigger>
+              <TabsTrigger value="vectorize">向量化操作</TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="search" className="flex-1 overflow-hidden flex flex-col pt-4 data-[state=inactive]:hidden">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex-1">
+                <SearchBar
+                  onSearch={handleSearch}
+                  placeholder={`在 ${activeLibrary || "库"} 中搜索...`}
+                />
               </div>
-              {isSearching && (
-                <div className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-                  搜索中...
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="vector-search"
+                  checked={useVectorSearch}
+                  onCheckedChange={(checked) => setUseVectorSearch(checked as boolean)}
+                />
+                <Label htmlFor="vector-search">向量化搜索 (Chroma)</Label>
+              </div>
+            </div>
+            
+            <ScrollArea className="flex-1">
+              {isSearching ? (
+                 <div className="flex items-center justify-center py-8">
+                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                 </div>
+              ) : (
+                <div className="pb-6">
+                   <IconGrid
+                    results={searchResults}
+                    onIconClick={() => {}}
+                  />
                 </div>
               )}
-              <IconGrid
-                results={searchResults}
-                onIconClick={() => {}}
-              />
-            </div>
-          )}
+            </ScrollArea>
+          </TabsContent>
 
-          {activeTab === "vectorize" && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={handleToggleSelectionMode}
-                    className="px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors"
-                  >
-                    批量选择
-                  </button>
-                  {isSelectionMode && (
-                    <>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        已选 {selectedIconIds.size}
-                      </span>
-                      <button
-                        onClick={handleSelectAll}
-                        className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-                      >
-                        {selectedIconIds.size === iconResults.length ? "取消全选" : "全选"}
-                      </button>
-                    </>
-                  )}
-                </div>
-                <button
-                  onClick={handleBatchEmbedding}
-                  disabled={selectedIconIds.size === 0 || isBatchEmbedding}
-                  className={`px-3 py-1.5 text-sm font-medium text-white rounded-md transition-colors
-                    ${
-                      selectedIconIds.size === 0 || isBatchEmbedding
-                        ? "bg-blue-400 cursor-not-allowed"
-                        : "bg-blue-600 hover:bg-blue-700"
-                    }`}
+          <TabsContent value="vectorize" className="flex-1 overflow-hidden flex flex-col pt-4 data-[state=inactive]:hidden">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Button
+                  variant={isSelectionMode ? "secondary" : "outline"}
+                  onClick={handleToggleSelectionMode}
                 >
-                  {isBatchEmbedding ? "Embedding..." : "开始 Embedding"}
-                </button>
+                  批量选择
+                </Button>
+                {isSelectionMode && (
+                  <>
+                    <span className="text-sm text-muted-foreground">
+                      已选 {selectedIconIds.size}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      onClick={handleSelectAll}
+                    >
+                      {selectedIconIds.size === iconResults.length ? "取消全选" : "全选"}
+                    </Button>
+                  </>
+                )}
               </div>
-              {isLoadingIcons ? (
-                <div className="mb-3 text-xs text-gray-500 dark:text-gray-400">
-                  加载图标中...
-                </div>
-              ) : null}
-              <IconGrid
-                results={iconResults}
-                onIconClick={(r) => setSelectedIcon(r.icon)}
-                selectionMode={isSelectionMode}
-                selectedIds={selectedIconIds}
-                onToggleSelect={handleToggleSelect}
-              />
-              <IconPreview icon={selectedIcon} onClose={() => setSelectedIcon(null)} />
+              <Button
+                onClick={handleBatchEmbedding}
+                disabled={selectedIconIds.size === 0 || isBatchEmbedding}
+              >
+                {isBatchEmbedding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isBatchEmbedding ? "Embedding..." : "开始 Embedding"}
+              </Button>
             </div>
-          )}
-        </main>
-      </div>
+
+            <ScrollArea className="flex-1">
+              {isLoadingIcons ? (
+                 <div className="space-y-4 pb-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                      {Array.from({ length: 12 }).map((_, i) => (
+                        <Skeleton key={i} className="h-32 w-full rounded-lg" />
+                      ))}
+                    </div>
+                 </div>
+              ) : (
+                <div className="pb-6">
+                  <IconGrid
+                    results={iconResults}
+                    onIconClick={(r) => setSelectedIcon(r.icon)}
+                    selectionMode={isSelectionMode}
+                    selectedIds={selectedIconIds}
+                    onToggleSelect={handleToggleSelect}
+                  />
+                </div>
+              )}
+            </ScrollArea>
+            <IconPreview icon={selectedIcon} onClose={() => setSelectedIcon(null)} />
+          </TabsContent>
+        </Tabs>
+      </main>
     </div>
   );
 };
 
 export default ConsolePage;
-

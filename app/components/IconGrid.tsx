@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import type { SearchResult } from "@/types/icon";
 import { Icon } from "@iconify/react";
 import { INITIAL_LOAD_COUNT } from "@/constants";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface IconGridProps {
   results: SearchResult[];
@@ -85,7 +87,7 @@ const IconGrid: React.FC<IconGridProps> = ({
           const isSelected = selectedIds.has(result.icon.id);
           
           return (
-            <div
+            <Card
               key={result.icon.id}
               onClick={() => {
                 if (selectionMode && onToggleSelect) {
@@ -94,34 +96,32 @@ const IconGrid: React.FC<IconGridProps> = ({
                   onIconClick(result);
                 }
               }}
-              className={`group p-4 bg-white border rounded-lg shadow-sm cursor-pointer transition-all dark:bg-gray-800 
+              className={`group cursor-pointer transition-all 
                 ${isSelected 
-                  ? 'border-blue-500 ring-2 ring-blue-500 dark:border-blue-400 dark:ring-blue-400' 
-                  : 'border-gray-200 hover:shadow-md hover:border-blue-300 dark:border-gray-700 dark:hover:border-blue-600'
+                  ? 'border-primary ring-2 ring-primary' 
+                  : 'hover:shadow-md hover:border-primary/50'
                 }`}
             >
-              <div className="relative">
+              <CardContent className="p-4 relative">
                 {selectionMode && (
-                  <div className="absolute top-0 right-0 z-10">
-                    <input
-                      type="checkbox"
+                  <div className="absolute top-2 right-2 z-10">
+                    <Checkbox
                       checked={isSelected}
-                      onChange={() => {}} // Handled by div onClick
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                      className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground pointer-events-none"
                     />
                   </div>
                 )}
                 <div className="flex items-center justify-center h-20 mb-3">
                   <Icon icon={`${result.icon.library}:${result.icon.name}`} width={36} height={36} />
                 </div>
-              </div>
-              <h3 className="text-xs font-medium text-center text-gray-900 truncate dark:text-white">
-                {result.icon.name}
-              </h3>
-              <p className="text-xs text-center text-gray-500 truncate dark:text-gray-400">
-                {result.icon.library}
-              </p>
-            </div>
+                <h3 className="text-xs font-medium text-center truncate">
+                  {result.icon.name}
+                </h3>
+                <p className="text-xs text-center text-muted-foreground truncate">
+                  {result.icon.library}
+                </p>
+              </CardContent>
+            </Card>
           );
         })}
       </div>
