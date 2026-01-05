@@ -15,7 +15,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 type LibraryInfo = {
   prefix: string;
@@ -29,6 +30,7 @@ const ConsolePage: React.FC = () => {
   const [libraries, setLibraries] = useState<LibraryInfo[]>([]);
   const [activeLibrary, setActiveLibrary] = useState<string>("");
   const [isLoadingLibraries, setIsLoadingLibraries] = useState<boolean>(false);
+  const [librarySearchQuery, setLibrarySearchQuery] = useState<string>("");
 
   // Search tab
   const [query, setQuery] = useState<string>("");
@@ -51,6 +53,16 @@ const ConsolePage: React.FC = () => {
     () => libraries.find((l) => l.prefix === activeLibrary),
     [libraries, activeLibrary]
   );
+
+  const filteredLibraries = useMemo(() => {
+    if (!librarySearchQuery) return libraries;
+    const lower = librarySearchQuery.toLowerCase();
+    return libraries.filter(
+      (lib) =>
+        lib.name.toLowerCase().includes(lower) ||
+        lib.prefix.toLowerCase().includes(lower)
+    );
+  }, [libraries, librarySearchQuery]);
 
   useEffect(() => {
     const init = async () => {
@@ -192,9 +204,20 @@ const ConsolePage: React.FC = () => {
   return (
     <div className="flex h-screen bg-background">
       <aside className="w-64 border-r bg-muted/10 flex flex-col h-full overflow-hidden">
-        <div className="p-4 border-b">
-          <h2 className="text-lg font-semibold tracking-tight">图标库</h2>
-          <p className="text-sm text-muted-foreground">选择一个库进行操作</p>
+        <div className="p-4 border-b space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">图标库</h2>
+            <p className="text-sm text-muted-foreground">选择一个库进行操作</p>
+          </div>
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="搜索图标库..."
+              value={librarySearchQuery}
+              onChange={(e) => setLibrarySearchQuery(e.target.value)}
+              className="pl-8 h-9"
+            />
+          </div>
         </div>
         <ScrollArea className="flex-1 overflow-auto">
           <div className="p-2 space-y-1">
@@ -205,7 +228,7 @@ const ConsolePage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              libraries.map((lib) => (
+              filteredLibraries.map((lib) => (
                 <Button
                   key={lib.prefix}
                   variant={activeLibrary === lib.prefix ? "secondary" : "ghost"}
@@ -218,6 +241,11 @@ const ConsolePage: React.FC = () => {
                   </Badge>
                 </Button>
               ))
+            )}
+            {!isLoadingLibraries && filteredLibraries.length === 0 && (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                未找到相关图标库
+              </div>
             )}
           </div>
         </ScrollArea>
