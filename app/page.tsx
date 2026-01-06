@@ -10,14 +10,15 @@ import type { SearchResult } from "../types/icon";
 import { SearchProvider, SearchContext } from "../context/SearchContext";
 import { embeddingService } from "../services/embedding";
 import { APP_NAME, APP_DESCRIPTION } from "../constants";
+import { useToast } from "./components/ToastProvider";
  
-
 // 创建一个使用SearchContext的内部组件
 const HomeContent: React.FC = () => {
   const context = useContext(SearchContext);
   const [, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const { showToast } = useToast();
 
   // 选项卡状态
   const [activeTab, setActiveTab] = useState<"vectorModel" | "vectorStore">(
@@ -28,6 +29,10 @@ const HomeContent: React.FC = () => {
   
   // 处理搜索查询
   const handleSearch = async (query: string) => {
+    if (!query.trim()) {
+      showToast("请输入关键词再搜索", "error");
+      return;
+    }
     context?.setQuery(query);
     setHasSearched(true);
     try {
