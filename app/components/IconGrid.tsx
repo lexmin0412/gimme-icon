@@ -12,6 +12,7 @@ interface IconGridProps {
   selectionMode?: boolean;
   selectedIds?: Set<string>;
   onToggleSelect?: (result: SearchResult) => void;
+  isCompact?: boolean;
 }
 
 const IconGrid: React.FC<IconGridProps> = ({ 
@@ -19,7 +20,8 @@ const IconGrid: React.FC<IconGridProps> = ({
   onIconClick,
   selectionMode = false,
   selectedIds = new Set(),
-  onToggleSelect
+  onToggleSelect,
+  isCompact = false
 }) => {
   // 首屏加载INITIAL_LOAD_COUNT个图标，每次加载INITIAL_LOAD_COUNT个
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD_COUNT);
@@ -58,13 +60,14 @@ const IconGrid: React.FC<IconGridProps> = ({
       { threshold: 0.5 }
     );
 
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current);
+    const currentLoadMoreRef = loadMoreRef.current;
+    if (currentLoadMoreRef) {
+      observer.observe(currentLoadMoreRef);
     }
 
     return () => {
-      if (loadMoreRef.current) {
-        observer.unobserve(loadMoreRef.current);
+      if (currentLoadMoreRef) {
+        observer.unobserve(currentLoadMoreRef);
       }
     };
   }, [visibleCount, results.length, handleLoadMore]);
@@ -82,7 +85,11 @@ const IconGrid: React.FC<IconGridProps> = ({
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 pt-1">
+      <div className={`grid pt-1 ${
+        isCompact 
+          ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2" 
+          : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+      }`}>
         {visibleResults.map((result) => {
           const isSelected = selectedIds.has(result.icon.id);
           
@@ -98,27 +105,24 @@ const IconGrid: React.FC<IconGridProps> = ({
               }}
               className={`group cursor-pointer transition-all py-0 
                 ${isSelected 
-                  ? 'border-primary ring-2 ring-primary' 
-                  : 'hover:shadow-md hover:border-primary/50'
-                }`}
+                  ? "ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20" 
+                  : "hover:shadow-md hover:border-blue-300 dark:hover:border-blue-700"}
+              `}
             >
-              <CardContent className="p-4 relative">
+              <CardContent className={`flex flex-col items-center justify-center relative ${isCompact ? "p-2 h-20" : "p-4 h-28"}`}>
                 {selectionMode && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <Checkbox
-                      checked={isSelected}
-                      className="data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground pointer-events-none"
+                  <div className="absolute top-2 left-2" onClick={(e) => e.stopPropagation()}>
+                    <Checkbox 
+                      checked={isSelected} 
+                      onCheckedChange={() => onToggleSelect && onToggleSelect(result)}
                     />
                   </div>
                 )}
-                <div className="flex items-center justify-center h-20 mb-3">
-                  <Icon icon={`${result.icon.library}:${result.icon.name}`} width={36} height={36} />
+                <div className="text-gray-700 dark:text-gray-200 group-hover:scale-110 transition-transform">
+                  <Icon icon={`${result.icon.library}:${result.icon.name}`} width={isCompact ? 28 : 32} height={isCompact ? 28 : 32} />
                 </div>
-                <h3 className="text-xs font-medium text-center truncate">
+                <p className={`mt-2 text-gray-500 dark:text-gray-400 text-center truncate w-full ${isCompact ? "text-[10px]" : "text-xs"}`}>
                   {result.icon.name}
-                </h3>
-                <p className="text-xs text-center text-muted-foreground truncate">
-                  {result.icon.library}
                 </p>
               </CardContent>
             </Card>
