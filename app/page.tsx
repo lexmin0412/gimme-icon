@@ -6,13 +6,11 @@ import IconGrid from "./components/IconGrid";
 import IconPreview from "./components/IconPreview";
 import TabButton from "./components/TabButton";
 import { iconSearchService } from "../services/IconSearchService";
-import type { SearchResult, FilterOptions } from "../types/icon";
+import type { SearchResult } from "../types/icon";
 import { SearchProvider, SearchContext } from "../context/SearchContext";
 import { embeddingService } from "../services/embedding";
 import { APP_NAME, APP_DESCRIPTION } from "../constants";
-import type { VectorStoreType } from "../services/vector-store-service";
-import { AVAILABLE_MODELS } from "../services/embedding";
-import { useToast } from "./components/ToastProvider";
+ 
 
 // 创建一个使用SearchContext的内部组件
 const HomeContent: React.FC = () => {
@@ -20,17 +18,11 @@ const HomeContent: React.FC = () => {
   const [, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-  const { showToast } = useToast();
 
   // 选项卡状态
   const [activeTab, setActiveTab] = useState<"vectorModel" | "vectorStore">(
     "vectorModel"
   );
-  
-  // 多选相关状态
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedIconIds, setSelectedIconIds] = useState<Set<string>>(new Set());
-  const [isBatchRefreshing, setIsBatchRefreshing] = useState(false);
 
   // 加载图标库列表
   
@@ -60,96 +52,6 @@ const HomeContent: React.FC = () => {
   // 关闭图标预览
   const handleClosePreview = () => {
     context?.setSelectedIcon(null);
-  };
-
-  // 处理选择模式切换
-  const handleToggleSelectionMode = () => {
-    setIsSelectionMode(!isSelectionMode);
-    setSelectedIconIds(new Set());
-  };
-
-  // 处理单个图标选择
-  const handleToggleSelect = (result: SearchResult) => {
-    const newSelected = new Set(selectedIconIds);
-    if (newSelected.has(result.icon.id)) {
-      newSelected.delete(result.icon.id);
-    } else {
-      newSelected.add(result.icon.id);
-    }
-    setSelectedIconIds(newSelected);
-  };
-
-  // 全选/取消全选
-  const handleSelectAll = () => {
-    if (!context?.results) return;
-    
-    if (selectedIconIds.size === context.results.length) {
-      setSelectedIconIds(new Set());
-    } else {
-      const allIds = new Set(context.results.map(r => r.icon.id));
-      setSelectedIconIds(allIds);
-    }
-  };
-
-  // 批量刷新向量
-  const handleBatchRefresh = async () => {
-    if (selectedIconIds.size === 0) return;
-    
-    setIsBatchRefreshing(true);
-
-    try {
-      await embeddingService.initialize();
-
-      // 获取选中的图标对象
-      const selectedIcons = context?.results
-        .filter(r => selectedIconIds.has(r.icon.id))
-        .map(r => r.icon) || [];
-      
-      const items = [];
-      
-      // 生成所有embedding
-      for (const icon of selectedIcons) {
-        try {
-          const document = `${icon.name} ${icon.tags.join(' ')} ${icon.synonyms.join(' ')}`;
-          const embedding = await embeddingService.generateEmbedding(document);
-          items.push({
-            icon,
-            embedding
-          });
-        } catch (error) {
-          console.error(`Failed to generate embedding for ${icon.name}:`, error);
-        }
-      }
-
-      if (items.length > 0) {
-        const response = await fetch('/api/refresh-embedding', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ items }),
-        });
-        
-        if (!response.ok) throw new Error("Failed to update batch");
-        
-        await response.json();
-        
-        showToast(
-          `Batch refresh complete: ${items.length} icons updated`, 
-          "success"
-        );
-      } else {
-        showToast("No valid icons to refresh", "error");
-      }
-      
-      // 退出选择模式
-      setIsSelectionMode(false);
-      setSelectedIconIds(new Set());
-      
-    } catch (error) {
-      console.error("Batch refresh failed:", error);
-      showToast("Batch refresh failed", "error");
-    } finally {
-      setIsBatchRefreshing(false);
-    }
   };
 
   // 加载图标库列表
@@ -340,63 +242,10 @@ const HomeContent: React.FC = () => {
         /> */}
 
         {hasSearched && (
-          <>
-            <div className="flex justify-end mb-4 px-2">
-          {!isSelectionMode ? (
-            <button
-              onClick={handleToggleSelectionMode}
-              className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 transition-colors"
-            >
-              Select Icons
-            </button>
-          ) : (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {selectedIconIds.size} selected
-              </span>
-              <button
-                onClick={handleSelectAll}
-                className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-              >
-                {selectedIconIds.size === (context?.results.length || 0) ? "Deselect All" : "Select All"}
-              </button>
-              <button
-                onClick={handleBatchRefresh}
-                disabled={selectedIconIds.size === 0 || isBatchRefreshing}
-                className={`px-3 py-1.5 text-sm font-medium text-white rounded-md transition-colors flex items-center gap-2
-                  ${selectedIconIds.size === 0 || isBatchRefreshing
-                    ? "bg-blue-400 cursor-not-allowed"
-                    : "bg-blue-600 hover:bg-blue-700"
-                  }`}
-              >
-                {isBatchRefreshing ? (
-                   <>
-                    <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    Refreshing...
-                   </>
-                ) : (
-                  "Refresh Embeddings"
-                )}
-              </button>
-              <button
-                onClick={handleToggleSelectionMode}
-                disabled={isBatchRefreshing}
-                className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
-        </div>
-
-        <IconGrid 
-          results={context?.results || []} 
-          onIconClick={handleIconClick}
-          selectionMode={isSelectionMode}
-          selectedIds={selectedIconIds}
-          onToggleSelect={handleToggleSelect}
-        />
-          </>
+          <IconGrid 
+            results={context?.results || []} 
+            onIconClick={handleIconClick}
+          />
         )}
 
         <IconPreview

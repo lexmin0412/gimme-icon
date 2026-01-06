@@ -37,7 +37,12 @@ export async function POST(request: Request) {
     await collection.upsert({
       ids,
       embeddings,
-      metadatas: metadatas.some((m) => m) ? metadatas : undefined,
+      metadatas: (() => {
+        const valid = metadatas.filter(
+          (m): m is { [key: string]: string | number | boolean } => !!m
+        );
+        return valid.length ? valid : undefined;
+      })(),
     });
     
     return NextResponse.json({ success: true, message: 'Vectors added successfully' });
