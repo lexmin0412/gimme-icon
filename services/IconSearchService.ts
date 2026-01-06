@@ -231,195 +231,98 @@ class IconSearchService {
 
   async searchIcons(
     query: string,
-    filters: FilterOptions,
+    _filters: FilterOptions,
     limit: number = INITIAL_LOAD_COUNT
   ): Promise<SearchResult[]> {
     if (!this.initialized) {
       await this.initialize();
     }
 
-    console.log('this.icons', this.icons)
-
-    // 应用过滤器（移到 try 块外面，以便在 catch 中也能使用）
-    const filteredIcons = this.icons.filter((icon) => {
-      if (
-        filters.libraries.length > 0 &&
-        !filters.libraries.includes(icon.library)
-      ) {
-        return false;
-      }
-      if (
-        filters.categories.length > 0 &&
-        !filters.categories.includes(icon.category)
-      ) {
-        return false;
-      }
-      if (
-        filters.tags.length > 0 &&
-        !filters.tags.some((tag) => icon.tags.includes(tag))
-      ) {
-        return false;
-      }
-      return true;
-    });
+    if (!query.trim()) {
+      return [];
+    }
 
     try {
-      // 如果没有查询词，直接返回过滤结果
-      if (!query.trim()) {
-        return filteredIcons.slice(0, limit).map((icon) => ({
-          icon,
-          score: 0,
-        }));
+      const queryEmbedding = await embeddingService.generateEmbedding(query);
+
+      const response = await fetch("/api/chroma/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          queryEmbedding,
+          limit: limit,
+          filters: {},
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success || !Array.isArray(data.results)) {
+        return [];
       }
 
-      const useCloud = isClient && this.vectorStoreConfig.type === "cloud-chroma";
-      const useFallback = embeddingService.isUsingFallback();
-      if (useFallback) {
-        return this.simpleTextSearch(query, filters, limit, filteredIcons);
-      }
-      const queryEmbedding = await embeddingService.generateEmbedding(query);
-      if (useCloud) {
-        const response = await fetch("/api/chroma/search", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ queryEmbedding, limit }),
-        });
-        const data = await response.json();
-        if (!data.success || !Array.isArray(data.results)) {
-          return this.simpleTextSearch(query, filters, limit, filteredIcons);
-        }
-        const results: SearchResult[] = [];
-        for (const r of data.results) {
-          let icon: Icon | undefined;
-          const meta = r.metadata as Record<string, unknown> | undefined;
-          if (meta) {
-            const id = String(r.id);
-            const name = String(meta.name ?? id.split("__")[1] ?? id);
-            const library = String(meta.library ?? id.split("__")[0] ?? "");
-            const category = String(meta.category ?? "");
-            const tagsRaw = meta.tags;
-            const synonymsRaw = meta.synonyms;
-            const tags =
-              typeof tagsRaw === "string"
-                ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean)
-                : Array.isArray(tagsRaw)
-                ? (tagsRaw as unknown[]).map((t) => String(t)).filter(Boolean)
-                : (name.includes("-") ? name.split("-") : [name]);
-            const synonyms =
-              typeof synonymsRaw === "string"
-                ? synonymsRaw.split(",").map((t) => t.trim()).filter(Boolean)
-                : Array.isArray(synonymsRaw)
-                ? (synonymsRaw as unknown[]).map((t) => String(t)).filter(Boolean)
-                : [];
-            icon = {
-              id,
-              name,
-              svg: "",
-              library,
-              category,
-              tags,
-              synonyms,
-            };
-          } else {
-            icon = this.icons.find((i) => i.id === r.id);
-          }
-          if (!icon) continue;
+      const results: SearchResult[] = [];
+      for (const r of data.results) {
+        const icon = this.parseIconFromMetadata(r.id, r.metadata);
+        if (icon) {
           results.push({ icon, score: r.score });
         }
-        return results
-          .sort((a, b) => b.score - a.score)
-          .slice(0, limit);
-      } else {
-        const vectorStoreFilters: Record<string, string[] | string> = {};
-        if (filters.libraries.length > 0) {
-          vectorStoreFilters.library = filters.libraries;
-        }
-        if (filters.categories.length > 0) {
-          vectorStoreFilters.category = filters.categories;
-        }
-        const searchResults = await this.vectorStore.searchVectors(
-          queryEmbedding,
-          limit,
-          vectorStoreFilters
-        );
-        const results: SearchResult[] = [];
-        for (const searchResult of searchResults) {
-          const icon = this.icons.find((icon) => icon.id === searchResult.id);
-          if (icon) {
-            if (
-              filters.tags.length === 0 ||
-              filters.tags.some((tag) => icon.tags.includes(tag))
-            ) {
-              results.push({
-                icon,
-                score: searchResult.score,
-              });
-            }
-          }
-        }
-        const sortedResults = results
-          .sort((a, b) => b.score - a.score)
-          .slice(0, limit);
-        if (sortedResults.length === 0) {
-          return this.simpleTextSearch(query, filters, limit, filteredIcons);
-        }
-        return sortedResults;
       }
+
+      return results;
     } catch (error) {
       console.error("Search failed:", error);
-      return this.simpleTextSearch(query, filters, limit, filteredIcons);
+      return [];
     }
   }
 
-  // 简单的文本匹配搜索（用于降级或开发环境）
-  private simpleTextSearch(
-    query: string,
-    filters: FilterOptions,
-    limit: number,
-    filteredIcons?: Icon[]
-  ): SearchResult[] {
-    const lowerQuery = query.toLowerCase();
+  /**
+   * 从元数据中解析图标对象
+   * @param id 图标ID
+   * @param metadata 元数据
+   * @returns 解析出的图标对象，如果解析失败则返回 undefined
+   */
+  private parseIconFromMetadata(id: string, metadata?: Record<string, unknown>): Icon | undefined {
+    if (!metadata) {
+      // 如果没有元数据，尝试从内存中找（作为备份）
+      return this.icons.find((i) => i.id === id);
+    }
 
-    // 使用传入的过滤图标，如果没有则先应用过滤
-    const iconsToSearch =
-      filteredIcons ||
-      this.icons.filter((icon) => {
-        if (
-          filters.libraries.length > 0 &&
-          !filters.libraries.includes(icon.library)
-        ) {
-          return false;
-        }
-        if (
-          filters.categories.length > 0 &&
-          !filters.categories.includes(icon.category)
-        ) {
-          return false;
-        }
-        if (
-          filters.tags.length > 0 &&
-          !filters.tags.some((tag) => icon.tags.includes(tag))
-        ) {
-          return false;
-        }
-        return true;
-      });
+    try {
+      const name = String(metadata.name ?? id.split("__")[1] ?? id);
+      const library = String(metadata.library ?? id.split("__")[0] ?? "");
+      const category = String(metadata.category ?? "");
+      const tagsRaw = metadata.tags;
+      const synonymsRaw = metadata.synonyms;
+      
+      const tags =
+        typeof tagsRaw === "string"
+          ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean)
+          : Array.isArray(tagsRaw)
+          ? (tagsRaw as unknown[]).map((t) => String(t)).filter(Boolean)
+          : (name.includes("-") ? name.split("-") : [name]);
+          
+      const synonyms =
+        typeof synonymsRaw === "string"
+          ? synonymsRaw.split(",").map((t) => t.trim()).filter(Boolean)
+          : Array.isArray(synonymsRaw)
+          ? (synonymsRaw as unknown[]).map((t) => String(t)).filter(Boolean)
+          : [];
 
-    return iconsToSearch
-      .filter((icon) => {
-        // 简单文本匹配
-        const searchText = `${icon.name} ${icon.tags.join(
-          " "
-        )} ${icon.synonyms.join(" ")}`.toLowerCase();
-        return searchText.includes(lowerQuery);
-      })
-      .slice(0, limit)
-      .map((icon) => ({
-        icon,
-        score: 0,
-      }));
+      return {
+        id,
+        name,
+        svg: "", // 向量存储通常不存 SVG 字符串，前端会根据 id/name/library 渲染
+        library,
+        category,
+        tags,
+        synonyms,
+      };
+    } catch (error) {
+      console.error(`Error parsing icon from metadata for ${id}:`, error);
+      return this.icons.find((i) => i.id === id);
+    }
   }
 
   // 获取所有可用的过滤选项
