@@ -91,7 +91,7 @@ export class IndexedDBVectorStore implements IVectorStore {
     });
 
     return results
-      .filter(r => r.score > 0.6)
+      .filter(r => r.score > 0.4)
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
   }

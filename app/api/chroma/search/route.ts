@@ -44,7 +44,7 @@ export async function POST(request: Request) {
           return similarityScore;
         })(),
         metadata: (searchResults.metadatas?.[0]?.[index] as Record<string, string | number | boolean> | undefined) ?? undefined,
-      }));
+      })).filter((item)=>item.score >= 0.4)
     }
     
     return NextResponse.json({ success: true, results });
