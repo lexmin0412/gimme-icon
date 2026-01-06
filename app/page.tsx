@@ -17,13 +17,7 @@ const HomeContent: React.FC = () => {
   const context = useContext(SearchContext);
   const [, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const { showToast } = useToast();
-
-  // 选项卡状态
-  const [activeTab, setActiveTab] = useState<"vectorModel" | "vectorStore">(
-    "vectorModel"
-  );
 
   // 加载图标库列表
   
@@ -59,18 +53,6 @@ const HomeContent: React.FC = () => {
     context?.setSelectedIcon(null);
   };
 
-  // 加载图标库列表
-  
-
-  // 更新选中的图标库
-  
-
-  // 处理向量存储类型切换
-  
-
-  // 处理模型切换
-  
-
   // 如果context不存在，显示错误信息
   if (!context) {
     return (
@@ -85,127 +67,6 @@ const HomeContent: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         {/* GitHub链接和设置按钮 */}
         <div className="absolute top-4 right-4 flex items-center gap-4">
-          {/* 模型切换设置 */}
-          <div className="relative">
-            {/* <button
-              onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-              className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors flex items-center"
-              aria-label="Settings"
-            >
-              <svg
-                className="w-8 h-8"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-            </button> */}
-
-            {/* 设置菜单 */}
-            {showSettingsMenu && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-[800px] max-w-3xl h-[70vh] overflow-hidden flex flex-col">
-                  {/* 标题栏 */}
-                  <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      Settings
-                    </h2>
-                    <button
-                      onClick={() => setShowSettingsMenu(false)}
-                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                    >
-                      <svg
-                        className="w-6 h-6"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-
-                  {/* 内容区域 - 左右分栏 */}
-                  <div className="flex flex-1 overflow-hidden">
-                    {/* 左侧选项卡 */}
-                    <div className="w-48 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                      <TabButton
-                        tab="vectorModel"
-                        label="Vector Model"
-                        activeTab={activeTab}
-                        onClick={setActiveTab}
-                      />
-                      
-                      <TabButton
-                        tab="vectorStore"
-                        label="Vector Store Type"
-                        activeTab={activeTab}
-                        onClick={setActiveTab}
-                      />
-                    </div>
-
-                    {/* 右侧内容 */}
-                    <div className="flex-1 overflow-y-auto p-6">
-                      {/* 向量模型选项卡内容 */}
-                      {activeTab === "vectorModel" && (
-                        <div>
-                          <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4">
-                            Vector Model
-                          </h3>
-                          <div className="space-y-2">
-                            <div className="px-4 py-2 text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                              Multilingual (Xenova/paraphrase-multilingual-MiniLM-L12-v2)
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              Vector model is fixed and cannot be changed.
-                            </div>
-                          </div>
-                          
-                        </div>
-                      )}
-
-                      {/* 向量存储类型选项卡内容 */}
-                      {activeTab === "vectorStore" && (
-                        <div>
-                          <h3 className="text-base font-medium text-gray-900 dark:text-white mb-4">
-                            Vector Store Type
-                          </h3>
-                          <div className="space-y-2">
-                            <div className="px-4 py-2 text-sm bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                              Cloud ChromaDB
-                            </div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">
-                              Vector store type is fixed to Chroma Cloud.
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* GitHub链接 */}
           <a
@@ -240,12 +101,6 @@ const HomeContent: React.FC = () => {
 
         <SearchBar onSearch={handleSearch} />
 
-        {/* <FilterPanel
-          filters={context.filters}
-          availableFilters={availableFilters}
-          onFilterChange={handleFilterChange}
-        /> */}
-
         {hasSearched && (
           <IconGrid 
             results={context?.results || []} 
@@ -253,6 +108,7 @@ const HomeContent: React.FC = () => {
           />
         )}
 
+        {/* 图标预览弹窗 */}
         <IconPreview
           icon={context.selectedIcon || null}
           onClose={handleClosePreview}
