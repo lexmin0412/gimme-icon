@@ -32,15 +32,15 @@ const ConsolePage: React.FC = () => {
   const [isLoadingLibraries, setIsLoadingLibraries] = useState<boolean>(false);
   const [librarySearchQuery, setLibrarySearchQuery] = useState<string>("");
 
-  // Search tab
-  const [query, setQuery] = useState<string>("");
   const [useVectorSearch, setUseVectorSearch] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState<boolean>(false);
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
 
   // Vectorize tab
   const [iconResults, setIconResults] = useState<SearchResult[]>([]);
   const [isLoadingIcons, setIsLoadingIcons] = useState<boolean>(false);
+  const [hasLoadedIcons, setHasLoadedIcons] = useState<boolean>(false);
   const [isSelectionMode, setIsSelectionMode] = useState<boolean>(false);
   const [selectedIconIds, setSelectedIconIds] = useState<Set<string>>(new Set());
   const [selectedIcon, setSelectedIcon] = useState<Icon | null>(null);
@@ -101,6 +101,7 @@ const ConsolePage: React.FC = () => {
         setIconResults(results);
       } finally {
         setIsLoadingIcons(false);
+        setHasLoadedIcons(true);
       }
     };
     loadLibraryIcons();
@@ -108,6 +109,7 @@ const ConsolePage: React.FC = () => {
 
   const handleSearch = async (q: string) => {
     if (!activeLibrary) return;
+    setHasSearched(true);
     try {
       setIsSearching(true);
       if (useVectorSearch) {
@@ -233,7 +235,10 @@ const ConsolePage: React.FC = () => {
                   key={lib.prefix}
                   variant={activeLibrary === lib.prefix ? "secondary" : "ghost"}
                   className="w-full justify-between font-normal"
-                  onClick={() => setActiveLibrary(lib.prefix)}
+                  onClick={() => {
+                    setActiveLibrary(lib.prefix);
+                    setHasLoadedIcons(false);
+                  }}
                 >
                   <span className="truncate">{lib.name}</span>
                   <Badge variant="outline" className="ml-2 text-xs font-normal">
@@ -291,18 +296,19 @@ const ConsolePage: React.FC = () => {
             </div>
             
             <ScrollArea className="flex-1 overflow-auto">
-              {isSearching ? (
-                 <div className="flex items-center justify-center py-8">
-                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                 </div>
-              ) : (
-                <div className="px-4">
-                   <IconGrid
+              <div className="px-4">
+                {hasSearched ? (
+                  <IconGrid
                     results={searchResults}
                     onIconClick={() => {}}
+                    loading={isSearching}
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="flex items-center justify-center h-64 text-muted-foreground">
+                    Enter a keyword to search
+                  </div>
+                )}
+              </div>
             </ScrollArea>
           </TabsContent>
 
@@ -339,25 +345,16 @@ const ConsolePage: React.FC = () => {
             </div>
 
             <ScrollArea className="flex-1 overflow-auto">
-              {isLoadingIcons ? (
-                 <div className="space-y-4 p-6">
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                      {Array.from({ length: 12 }).map((_, i) => (
-                        <Skeleton key={i} className="h-32 w-full rounded-lg" />
-                      ))}
-                    </div>
-                 </div>
-              ) : (
-                <div className="px-6">
-                  <IconGrid
-                    results={iconResults}
-                    onIconClick={(r) => setSelectedIcon(r.icon)}
-                    selectionMode={isSelectionMode}
-                    selectedIds={selectedIconIds}
-                    onToggleSelect={handleToggleSelect}
-                  />
-                </div>
-              )}
+              <div className="px-6">
+                <IconGrid
+                  results={iconResults}
+                  onIconClick={(r) => setSelectedIcon(r.icon)}
+                  selectionMode={isSelectionMode}
+                  selectedIds={selectedIconIds}
+                  onToggleSelect={handleToggleSelect}
+                  loading={isLoadingIcons || !hasLoadedIcons}
+                />
+              </div>
             </ScrollArea>
             <IconPreview icon={selectedIcon} onClose={() => setSelectedIcon(null)} />
           </TabsContent>

@@ -5,6 +5,7 @@ import { Icon } from "@iconify/react";
 import { INITIAL_LOAD_COUNT } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface IconGridProps {
   results: SearchResult[];
@@ -13,6 +14,7 @@ interface IconGridProps {
   selectedIds?: Set<string>;
   onToggleSelect?: (result: SearchResult) => void;
   isCompact?: boolean;
+  loading?: boolean;
 }
 
 const IconGrid: React.FC<IconGridProps> = ({ 
@@ -21,7 +23,8 @@ const IconGrid: React.FC<IconGridProps> = ({
   selectionMode = false,
   selectedIds = new Set(),
   onToggleSelect,
-  isCompact = false
+  isCompact = false,
+  loading = false
 }) => {
   // 首屏加载INITIAL_LOAD_COUNT个图标，每次加载INITIAL_LOAD_COUNT个
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD_COUNT);
@@ -74,6 +77,20 @@ const IconGrid: React.FC<IconGridProps> = ({
 
   // 只显示当前可见的结果
   const visibleResults = results.slice(0, visibleCount);
+
+  if (loading) {
+    return (
+      <div className={`grid pt-1 ${
+        isCompact 
+          ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2" 
+          : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+      }`}>
+        {Array.from({ length: INITIAL_LOAD_COUNT }).map((_, i) => (
+          <Skeleton key={i} className={`rounded-xl w-full ${isCompact ? "h-20" : "h-28"}`} />
+        ))}
+      </div>
+    );
+  }
 
   if (results.length === 0) {
     return (

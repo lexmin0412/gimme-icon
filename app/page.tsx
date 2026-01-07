@@ -14,7 +14,7 @@ import { useToast } from "./components/ToastProvider";
 // 创建一个使用SearchContext的内部组件
 const HomeContent: React.FC = () => {
   const context = useContext(SearchContext);
-  const [, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const { showToast } = useToast();
 
@@ -130,6 +130,7 @@ const HomeContent: React.FC = () => {
                   results={context?.results || []} 
                   onIconClick={handleIconClick}
                   isCompact={isSelected}
+                  loading={isLoading}
                 />
               </div>
 
