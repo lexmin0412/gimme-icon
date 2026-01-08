@@ -42,7 +42,9 @@ const ConsolePage: React.FC = () => {
   const [isLoadingIcons, setIsLoadingIcons] = useState<boolean>(false);
   const [hasLoadedIcons, setHasLoadedIcons] = useState<boolean>(false);
   const [isSelectionMode, setIsSelectionMode] = useState<boolean>(false);
-  const [selectedIconIds, setSelectedIconIds] = useState<Set<string>>(new Set());
+  const [selectedIconIds, setSelectedIconIds] = useState<Set<string>>(
+    new Set()
+  );
   const [selectedIcon, setSelectedIcon] = useState<Icon | null>(null);
   const [isBatchEmbedding, setIsBatchEmbedding] = useState<boolean>(false);
 
@@ -180,7 +182,9 @@ const ConsolePage: React.FC = () => {
       for (const r of iconResults) {
         if (!selectedIconIds.has(r.icon.id)) continue;
         const icon = r.icon;
-        const document = `${icon.name} ${icon.tags.join(" ")} ${icon.synonyms.join(" ")}`;
+        const document = `${icon.name} ${icon.tags.join(
+          " "
+        )} ${icon.synonyms.join(" ")}`;
         try {
           const embedding = await embeddingService.generateEmbedding(document);
           items.push({ icon, embedding });
@@ -206,11 +210,8 @@ const ConsolePage: React.FC = () => {
   return (
     <div className="flex h-screen bg-background">
       <aside className="w-64 border-r bg-muted/10 flex flex-col h-full overflow-hidden">
-        <div className="p-4 border-b space-y-4">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight">图标库</h2>
-            <p className="text-sm text-muted-foreground">选择一个库进行操作</p>
-          </div>
+        <div className="p-4 border-b space-y-3">
+          <h2 className="text-lg font-semibold tracking-tight">图标库</h2>
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -221,7 +222,7 @@ const ConsolePage: React.FC = () => {
             />
           </div>
         </div>
-        <ScrollArea className="flex-1 overflow-auto">
+        <ScrollArea className="flex-1">
           <div className="p-2 space-y-1">
             {isLoadingLibraries ? (
               <div className="space-y-2 p-2">
@@ -262,14 +263,19 @@ const ConsolePage: React.FC = () => {
             <div>
               {activeLibraryInfo && (
                 <p className="text-muted-foreground">
-                  当前库：{activeLibraryInfo.name} ({activeLibraryInfo.total} icons)
+                  当前库：{activeLibraryInfo.name} ({activeLibraryInfo.total}{" "}
+                  icons)
                 </p>
               )}
             </div>
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex-1 flex flex-col overflow-hidden"
+        >
           <div className="flex items-center justify-between border-b px-6 pb-4">
             <TabsList>
               <TabsTrigger value="search">搜索</TabsTrigger>
@@ -277,7 +283,10 @@ const ConsolePage: React.FC = () => {
             </TabsList>
           </div>
 
-          <TabsContent value="search" className="flex-1 overflow-hidden flex flex-col pt-4 data-[state=inactive]:hidden">
+          <TabsContent
+            value="search"
+            className="flex-1 overflow-hidden flex flex-col pt-4 data-[state=inactive]:hidden"
+          >
             <div className="flex items-center gap-4 mb-6 px-6">
               <div className="flex-1">
                 <SearchBar
@@ -289,12 +298,14 @@ const ConsolePage: React.FC = () => {
                 <Checkbox
                   id="vector-search"
                   checked={useVectorSearch}
-                  onCheckedChange={(checked) => setUseVectorSearch(checked as boolean)}
+                  onCheckedChange={(checked) =>
+                    setUseVectorSearch(checked as boolean)
+                  }
                 />
                 <Label htmlFor="vector-search">向量化搜索 (Chroma)</Label>
               </div>
             </div>
-            
+
             <ScrollArea className="flex-1 overflow-auto">
               <div className="px-4">
                 {hasSearched ? (
@@ -312,7 +323,10 @@ const ConsolePage: React.FC = () => {
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="vectorize" className="flex-1 overflow-hidden flex flex-col pt-4 data-[state=inactive]:hidden">
+          <TabsContent
+            value="vectorize"
+            className="flex-1 overflow-hidden flex flex-col pt-4 data-[state=inactive]:hidden"
+          >
             <div className="flex items-center justify-between mb-6 px-6">
               <div className="flex items-center gap-3">
                 <Button
@@ -326,11 +340,10 @@ const ConsolePage: React.FC = () => {
                     <span className="text-sm text-muted-foreground">
                       已选 {selectedIconIds.size}
                     </span>
-                    <Button
-                      variant="ghost"
-                      onClick={handleSelectAll}
-                    >
-                      {selectedIconIds.size === iconResults.length ? "取消全选" : "全选"}
+                    <Button variant="ghost" onClick={handleSelectAll}>
+                      {selectedIconIds.size === iconResults.length
+                        ? "取消全选"
+                        : "全选"}
                     </Button>
                   </>
                 )}
@@ -339,7 +352,9 @@ const ConsolePage: React.FC = () => {
                 onClick={handleBatchEmbedding}
                 disabled={selectedIconIds.size === 0 || isBatchEmbedding}
               >
-                {isBatchEmbedding && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isBatchEmbedding && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 {isBatchEmbedding ? "Embedding..." : "开始 Embedding"}
               </Button>
             </div>
@@ -356,7 +371,10 @@ const ConsolePage: React.FC = () => {
                 />
               </div>
             </ScrollArea>
-            <IconPreview icon={selectedIcon} onClose={() => setSelectedIcon(null)} />
+            <IconPreview
+              icon={selectedIcon}
+              onClose={() => setSelectedIcon(null)}
+            />
           </TabsContent>
         </Tabs>
       </main>
