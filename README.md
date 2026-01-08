@@ -105,3 +105,11 @@ pnpm start
 ## 许可证
 
 MIT License
+
+## 鸣谢
+
+在开发和前期规划过程中，参考了以下项目进行设计：
+
+- [Iconify](https://iconify.design)：提供海量图标库资源和 API
+- [Simple Icons](https://github.com/simple-icons/simple-icons)
+- [icones](https://github.com/antfu/icones)
