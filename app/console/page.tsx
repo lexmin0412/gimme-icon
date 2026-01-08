@@ -7,7 +7,7 @@ import SearchBar from "@/app/components/SearchBar";
 import { getIconLibraries, loadIcons } from "@/services/icons";
 import { iconSearchService } from "@/services/IconSearchService";
 import { embeddingService } from "@/services/embedding";
-import { INITIAL_LOAD_COUNT } from "@/constants";
+import { APP_NAME, INITIAL_LOAD_COUNT } from "@/constants";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,8 +15,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, LucideArrowBigRight, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import Image from "next/image";
+import { Icon as IconifyIcon } from "@iconify/react";
 
 type LibraryInfo = {
   prefix: string;
@@ -211,7 +213,25 @@ const ConsolePage: React.FC = () => {
     <div className="flex h-screen bg-background">
       <aside className="w-64 border-r bg-muted/10 flex flex-col h-full overflow-hidden">
         <div className="p-4 border-b space-y-3">
-          <h2 className="text-lg font-semibold tracking-tight">图标库</h2>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 shrink-0">
+              <Image src="/icon.svg" alt="App Icon" width={28} height={28} />
+              <h1 className="text-lg font-bold text-gray-900 dark:text-white hidden sm:block">
+                {APP_NAME}
+              </h1>
+            </div>
+            <div className="shrink-0">
+              <a
+                href="https://github.com/lexmin0412/gimme-icon-next"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
+                aria-label="GitHub Repository"
+              >
+                <IconifyIcon icon="lucide:github" className="w-5 h-5" />
+              </a>
+            </div>
+          </div>
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -222,7 +242,7 @@ const ConsolePage: React.FC = () => {
             />
           </div>
         </div>
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 overflow-auto">
           <div className="p-2 space-y-1">
             {isLoadingLibraries ? (
               <div className="space-y-2 p-2">
@@ -278,8 +298,8 @@ const ConsolePage: React.FC = () => {
         >
           <div className="flex items-center justify-between border-b px-6 pb-4">
             <TabsList>
-              <TabsTrigger value="search">搜索</TabsTrigger>
-              <TabsTrigger value="vectorize">向量化操作</TabsTrigger>
+              <TabsTrigger value="vectorize">向量化管理</TabsTrigger>
+              <TabsTrigger value="search">搜索测试</TabsTrigger>
             </TabsList>
           </div>
 
@@ -302,7 +322,7 @@ const ConsolePage: React.FC = () => {
                     setUseVectorSearch(checked as boolean)
                   }
                 />
-                <Label htmlFor="vector-search">向量化搜索 (Chroma)</Label>
+                <Label htmlFor="vector-search">语义检索 (Chroma)</Label>
               </div>
             </div>
 
