@@ -82,8 +82,8 @@ const IconGrid: React.FC<IconGridProps> = ({
     return (
       <div className={`grid pt-1 ${
         isCompact 
-          ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2" 
-          : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+          ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4 gap-2" 
+          : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-4"
       }`}>
         {Array.from({ length: INITIAL_LOAD_COUNT }).map((_, i) => (
           <Skeleton key={i} className={`rounded-xl w-full ${isCompact ? "h-20" : "h-28"}`} />
@@ -104,8 +104,8 @@ const IconGrid: React.FC<IconGridProps> = ({
     <div>
       <div className={`grid pt-1 ${
         isCompact 
-          ? "grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2" 
-          : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4"
+          ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-4 gap-2" 
+          : "grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-4"
       }`}>
         {visibleResults.map((result) => {
           const isSelected = selectedIds.has(result.icon.id);

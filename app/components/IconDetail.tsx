@@ -29,8 +29,9 @@ const IconDetail: React.FC<IconDetailProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleCopySvg = async () => {
+    const svgContent = await fetch(`https://api.iconify.design/${icon.library}/${icon.name}.svg`).then((res)=>res.text())
     try {
-      await navigator.clipboard.writeText(icon.svg);
+      await navigator.clipboard.writeText(svgContent);
       showToast("SVG copied to clipboard!", "success");
     } catch (err) {
       console.error("Failed to copy SVG:", err);
@@ -133,43 +134,50 @@ const IconDetail: React.FC<IconDetailProps> = ({
 
   return (
     <div className="flex flex-col h-full overflow-y-auto max-h-[calc(100vh-2rem)]">
-      {showCloseButton && onClose && (
-        <div className="flex justify-end p-1">
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-      
-      <div className="flex flex-col items-center gap-3 px-6 pb-4">
-        <div className="p-6 bg-muted rounded-xl">
+      {/* 紧凑头部区域 */}
+      <div className="flex items-start gap-4 px-5 pt-4 pb-2">
+        {/* 左侧图标 */}
+        <div className="p-3 bg-muted/50 rounded-xl shrink-0 flex items-center justify-center border border-border/50">
           <IconifyIcon
             icon={`${icon.library}:${icon.name}`}
-            width={56}
-            height={56}
+            width={40}
+            height={40}
+            className="text-foreground"
           />
         </div>
-        <div className="text-center">
-          <h3 className="text-xl font-bold truncate max-w-[250px]">{icon.name}</h3>
-          <p className="text-sm text-muted-foreground">
-            {icon.library} - {icon.category}
-          </p>
+        
+        {/* 右侧信息 */}
+        <div className="flex flex-col min-w-0 flex-1 pt-0.5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+               <h3 className="text-lg font-bold truncate leading-tight" title={icon.name}>{icon.name}</h3>
+               <p className="text-xs text-muted-foreground mt-1 font-medium">{icon.library}</p>
+            </div>
+            
+            <div className="flex items-center gap-1 shrink-0 -mt-1 -mr-2">
+               {/* 刷新按钮 */}
+               <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                onClick={handleRefreshEmbedding}
+                disabled={isRefreshing}
+                title="Refresh Embedding Data"
+              >
+                <RefreshCw
+                  className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+                />
+              </Button>
+              
+              {/* 关闭按钮 */}
+              {showCloseButton && onClose && (
+                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div className="flex justify-center px-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-2 text-muted-foreground h-8 text-xs"
-          onClick={handleRefreshEmbedding}
-          disabled={isRefreshing}
-        >
-          <RefreshCw
-            className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`}
-          />
-          {isRefreshing ? "Refreshing..." : "Refresh Embedding Data"}
-        </Button>
       </div>
 
       <div className="space-y-4 p-6 pt-2">

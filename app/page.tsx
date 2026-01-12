@@ -65,10 +65,10 @@ const HomeContent: React.FC = () => {
   const isSelected = !!context.selectedIcon;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
+    <div className="h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden flex flex-col">
       {!hasSearched ? (
         // 初始化状态：完全居中
-        <div className="flex flex-col items-center justify-center min-h-screen px-4 -mt-16">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 -mt-16">
           <div className="text-center mb-8">
             <h1 className="text-5xl font-bold text-gray-900 dark:text-white mb-4 flex items-center justify-center gap-3">
               <Image src="/icon.svg" alt="App Icon" width={48} height={48} />
@@ -85,8 +85,8 @@ const HomeContent: React.FC = () => {
       ) : (
         // 搜索后的状态
         <>
-          {/* 顶部固定导航栏 */}
-          <div className="fixed top-0 left-0 right-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+          {/* 顶部导航栏 */}
+          <div className="shrink-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
             <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
               {/* 左侧 Logo 和 标题 */}
               <div className="flex items-center gap-2 shrink-0">
@@ -116,29 +116,35 @@ const HomeContent: React.FC = () => {
             </div>
           </div>
 
-          {/* 页面主内容区域，留出导航栏高度 */}
-          <div className="container mx-auto px-4 pt-20 pb-8">
-            <div className={`flex flex-col lg:flex-row items-start transition-all duration-300 ${isSelected ? "gap-4" : "gap-8"}`}>
-              {/* 左侧列表区域 */}
-              <div className={`transition-all duration-300 ease-in-out ${isSelected ? "lg:w-7/12 w-full" : "w-full"}`}>
-                <IconGrid 
-                  results={context?.results || []} 
-                  onIconClick={handleIconClick}
-                  isCompact={isSelected}
-                  loading={isLoading}
-                />
-              </div>
-
-              {/* 右侧详情区域 */}
-              {context.selectedIcon && (
-                <div className="lg:w-5/12 w-full sticky top-20 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <IconDetail 
-                    icon={context.selectedIcon} 
-                    onClose={handleClosePreview}
-                    showCloseButton={true}
+          {/* 页面主内容区域 */}
+          <div className="flex-1 overflow-hidden">
+            <div className="container mx-auto px-4 h-full py-4">
+              <div className={`flex flex-col lg:flex-row h-full transition-all duration-300 ${isSelected ? "gap-4" : "gap-8"}`}>
+                {/* 左侧列表区域 */}
+                <div className={`transition-all duration-300 ease-in-out overflow-y-auto ${
+                  isSelected 
+                    ? "lg:w-7/12 w-full h-1/2 lg:h-full" 
+                    : "w-full h-full"
+                }`}>
+                  <IconGrid 
+                    results={context?.results || []} 
+                    onIconClick={handleIconClick}
+                    isCompact={isSelected}
+                    loading={isLoading}
                   />
                 </div>
-              )}
+
+                {/* 右侧详情区域 */}
+                {context.selectedIcon && (
+                  <div className="lg:w-5/12 w-full h-1/2 lg:h-full overflow-y-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                    <IconDetail 
+                      icon={context.selectedIcon} 
+                      onClose={handleClosePreview}
+                      showCloseButton={true}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </>
