@@ -11,9 +11,9 @@ import { embeddingService } from "../services/embedding";
 import { APP_NAME, APP_DESCRIPTION } from "../constants";
 import { useToast } from "./components/ToastProvider";
 import { Icon } from "@iconify/react";
- 
+
 // 创建一个使用SearchContext的内部组件
-const HomeContent: React.FC = () => {
+const HomeContent: React.FC<{ isAppLoading: boolean }> = ({ isAppLoading }) => {
   const context = useContext(SearchContext);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -23,6 +23,7 @@ const HomeContent: React.FC = () => {
   
   // 处理搜索查询
   const handleSearch = async (query: string) => {
+    if (isAppLoading) return;
     if (!query.trim()) {
       showToast("请输入关键词再搜索", "error");
       return;
@@ -79,7 +80,12 @@ const HomeContent: React.FC = () => {
             </p>
           </div>
           <div className="w-full max-w-2xl">
-            <SearchBar onSearch={handleSearch} />
+            <SearchBar 
+              onSearch={handleSearch} 
+              defaultValue={context?.query} 
+              placeholder={isAppLoading ? "Initializing..." : "Search icons..."}
+              disabled={isAppLoading}
+            />
           </div>
         </div>
       ) : (
@@ -98,7 +104,7 @@ const HomeContent: React.FC = () => {
 
               {/* 中间搜索框 */}
               <div className="flex-1 max-w-2xl">
-                <SearchBar onSearch={handleSearch} />
+                <SearchBar onSearch={handleSearch} defaultValue={context?.query} />
               </div>
 
               {/* 右侧 GitHub 链接 */}
@@ -177,22 +183,9 @@ const Home: React.FC = () => {
     initializeApp();
   }, []);
 
-  if (isAppLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-600 dark:text-gray-400">
-            Initializing icon search...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <SearchProvider>
-      <HomeContent />
+      <HomeContent isAppLoading={isAppLoading} />
     </SearchProvider>
   );
 };

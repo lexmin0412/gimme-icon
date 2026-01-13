@@ -7,13 +7,23 @@ import { Search } from "lucide-react";
 interface SearchBarProps {
   onSearch: (query: string) => void;
   placeholder?: string;
+  defaultValue?: string;
+  disabled?: boolean;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ 
   onSearch, 
-  placeholder = 'Search icons...' 
+  placeholder = 'Search icons...',
+  defaultValue = '',
+  disabled = false
 }) => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(defaultValue);
+
+  // 如果 defaultValue 发生变化，更新 query（可选，取决于是否需要响应外部变化）
+  // 在当前场景下，主要是为了初始化
+  // useEffect(() => {
+  //   setQuery(defaultValue);
+  // }, [defaultValue]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -22,6 +32,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (disabled) return;
     startTransition(()=>{
       onSearch(query);
     })
@@ -40,9 +51,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
           value={query}
           onChange={handleInputChange}
           className="pl-9"
+          disabled={disabled}
         />
       </div>
-      <Button type="submit">Search</Button>
+      <Button type="submit" disabled={disabled}>Search</Button>
     </form>
   );
 };
