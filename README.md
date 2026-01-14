@@ -26,11 +26,10 @@
 
 - ✅ **自然语言搜索**：输入描述性语句，AI 理解意图并匹配图标
 - 🧩 **聚合多图标库**：默认支持 Heroicons、Lucide，可扩展至 Iconify 全量图标集（200+ 库）
-- ⚡ **前端向量化**：使用 [Xenova/all-MiniLM-L6-v2](https://huggingface.co/Xenova/all-MiniLM-L6-v2) 在浏览器生成嵌入向量，**无需后端**
-- 🛠 **按需加载**：首次仅索引常用库，用户可自定义启用更多图标集
-- 💾 **离线可用**：向量化结果缓存至 IndexedDB，断网也能搜索
-- 🚀 **高性能**: 基于 Next.js 16 和 React 19 构建，支持服务端渲染
-- 🌐 **开源 & 免费**：MIT 许可，无 API 调用限制
+- 🛡️ **安全访问**：基于 GitHub OAuth 的登录认证，支持邮箱白名单控制台访问
+- 🎛️ **控制台管理**：提供可视化后台，支持批量选择图标进行向量化处理
+- 🚀 **现代技术栈**: 基于 Next.js 16 和 React 19 构建，支持服务端渲染
+- 🌐 **开源 & 免费**：MIT 许可，可二次分发
 
 ## 🚀 快速体验
 
@@ -43,10 +42,13 @@
 ## 技术栈
 
 - **前端框架**: Next.js 16（App Router） + React 19
-- **向量模型**：`@xenova/transformers` + `all-MiniLM-L6-v2`
+- **UI 组件**: Shadcn UI + Tailwind CSS 4
+- **认证方案**: Better-Auth (GitHub OAuth)
+- **向量检索**:
+  - 模型: `@huggingface/transformers` (all-MiniLM-L6-v2)
+  - 数据库: ChromaDB
 - **构建工具**: Turbopack
 - **类型系统**: TypeScript 5
-- **样式**: Tailwind CSS 4
 - **包管理器**: pnpm 10
 
 ## 快速开始
@@ -69,13 +71,23 @@ cd gimme-icon
 pnpm install
 ```
 
+### 环境变量配置
+
+复制 `.env.example` 到 `.env.local`：
+
+```bash
+cp .env.example .env.local
+```
+
+然后编辑 `.env.local` 填入你的配置信息（GitHub OAuth、Chroma Cloud、邮箱白名单等）。
+
 ### 启动开发服务器
 
 ```bash
 pnpm dev
 ```
 
-应用将在 `http://localhost:3000` 启动。
+应用将在 `http://localhost:9588` 启动（端口可在 `package.json` 中修改）。
 
 ### 构建生产版本
 
@@ -88,17 +100,18 @@ pnpm start
 
 ```
 ├── app/                  # Next.js App Router 应用目录
-│   ├── api/              # API 路由
-│   ├── components/       # 组件
-│   ├── layout.tsx        # 应用布局
+│   ├── api/              # API 路由 (auth, chroma, etc.)
+│   ├── console/          # 控制台页面 (需权限)
+│   ├── components/       # 通用组件
 │   └── page.tsx          # 首页
+├── components/           # UI 组件库 (shadcn/ui)
 ├── constants/            # 常量定义
 ├── context/              # React 上下文
-├── hooks/                # 自定义 Hooks
+├── libs/                 # 第三方库初始化 (auth, chroma)
 ├── public/               # 静态资源
-├── services/             # 服务层
-│   ├── vector-stores/    # 向量存储实现
-│   └── embedding.ts      # 嵌入式模型服务
+├── services/             # 业务逻辑服务
+│   ├── embedding.ts      # 向量化服务
+│   └── icons.ts          # 图标数据服务
 └── types/                # TypeScript 类型定义
 ```
 
