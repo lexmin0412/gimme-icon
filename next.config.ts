@@ -8,7 +8,18 @@ const nextConfig: NextConfig = {
   // output: 'standalone', // 暂不开启，如果体积实在太大再开
   turbopack: {
     root: path.resolve(__dirname),
-  }
+  },
+  images: {
+    // 允许从 GitHub 头像加载图片
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
