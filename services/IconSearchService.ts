@@ -229,6 +229,42 @@ class IconSearchService {
     }
   }
 
+  /**
+   * 获取指定ID的图标
+   */
+  async getIcon(id: string) {
+    if (!this.initialized) {
+      await this.initialize();
+    }
+
+    try {
+      const response = await fetch("/api/chroma/search", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          limit: 1,
+          ids: [id],
+        }),
+      });
+
+      const data = await response.json();
+      if (!data.success || !Array.isArray(data.results)) {
+        return null
+      }
+      const { results } = data
+
+      return {
+        score: results[0].score as number,
+        icon: this.parseIconFromMetadata(results[0].id, results[0].metadata),
+      }
+    } catch (error) {
+      console.error("Get Icon failed:", error);
+      return null
+    }
+  }
+
   async searchIcons(
     query: string,
     _filters: FilterOptions,
