@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { embeddingService } from "@/services/embedding";
-import { Copy, Plus, RefreshCw, X } from "lucide-react";
+import { Copy, Plus, X } from "lucide-react";
+import { iconSearchService } from "@/services/IconSearchService";
 
 interface IconDetailProps {
   icon: Icon;
@@ -29,7 +30,9 @@ const IconDetail: React.FC<IconDetailProps> = ({
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleCopySvg = async () => {
-    const svgContent = await fetch(`https://api.iconify.design/${icon.library}/${icon.name}.svg`).then((res)=>res.text())
+    const svgContent = await fetch(
+      `https://api.iconify.design/${icon.library}/${icon.name}.svg`
+    ).then((res) => res.text());
     try {
       await navigator.clipboard.writeText(svgContent);
       showToast("SVG copied to clipboard!", "success");
@@ -58,49 +61,36 @@ const IconDetail: React.FC<IconDetailProps> = ({
     setIsAddingTag(true);
     setTagError("");
 
+    // 刷新向量
     try {
-      const response = await fetch("/api/update-tag", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: icon.id,
-          newTag: newTag.trim(),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to add tag");
-      }
-
-      // 更新本地图标数据
-      if (onTagAdded) {
-        onTagAdded(data.icon);
-      }
-
-      // 重置输入
-      setNewTag("");
-      showToast("Tag added successfully!", "success");
+      await handleRefreshEmbedding([...icon.tags, newTag.trim()]);
+      setTagError("");
     } catch (error) {
       setTagError(error instanceof Error ? error.message : "Failed to add tag");
     } finally {
       setIsAddingTag(false);
     }
+
+    // 更新本地图标数据
+    if (onTagAdded) {
+      onTagAdded({ ...icon, tags: [...icon.tags, newTag.trim()] });
+    }
+    // 重置输入
+    setNewTag("");
+    showToast("Tag added successfully!", "success");
   };
 
-  const handleRefreshEmbedding = async () => {
+  const handleRefreshEmbedding = async (customTags?: string[]) => {
     setIsRefreshing(true);
     try {
       // 1. 初始化 embedding 服务
       await embeddingService.initialize();
 
       // 2. 生成 embedding
-      const document = `${icon.name} ${icon.tags.join(
+      const tags = Array.isArray(customTags) ? customTags : icon.tags;
+      const document = `${icon.name} ${tags.join(" ")} ${icon.synonyms.join(
         " "
-      )} ${icon.synonyms.join(" ")}`;
+      )}`;
       const embedding = await embeddingService.generateEmbedding(document);
 
       // 3. 调用 API 更新向量
@@ -110,11 +100,21 @@ const IconDetail: React.FC<IconDetailProps> = ({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          items: [{ icon: icon, embedding: embedding }],
+          items: [{ icon: {
+            ...icon,
+            tags,
+          }, embedding: embedding }],
         }),
       });
 
       const data = await response.json();
+
+      // 更新成功后，应该使用当前 id 调用 search 接口刷新当前详情
+      const result = await iconSearchService.getIcon(icon.id);
+
+      if (result?.icon) {
+        console.log('新的图标')
+      }
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to refresh embedding");
@@ -145,33 +145,31 @@ const IconDetail: React.FC<IconDetailProps> = ({
             className="text-foreground"
           />
         </div>
-        
+
         {/* 右侧信息 */}
         <div className="flex flex-col min-w-0 flex-1 pt-0.5">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-               <h3 className="text-lg font-bold truncate leading-tight" title={icon.name}>{icon.name}</h3>
-               <p className="text-xs text-muted-foreground mt-1 font-medium">{icon.library}</p>
-            </div>
-            
-            <div className="flex items-center gap-1 shrink-0 -mt-1 -mr-2">
-               {/* 刷新按钮 */}
-               <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                onClick={handleRefreshEmbedding}
-                disabled={isRefreshing}
-                title="Refresh Embedding Data"
+              <h3
+                className="text-lg font-bold truncate leading-tight"
+                title={icon.name}
               >
-                <RefreshCw
-                  className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`}
-                />
-              </Button>
-              
+                {icon.name}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-1 font-medium">
+                {icon.library}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1 shrink-0 -mt-1 -mr-2">
               {/* 关闭按钮 */}
               {showCloseButton && onClose && (
-                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-8 w-8"
+                >
                   <X className="h-4 w-4" />
                 </Button>
               )}
@@ -182,21 +180,31 @@ const IconDetail: React.FC<IconDetailProps> = ({
 
       <div className="space-y-4 p-6 pt-2">
         <div>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tags</h4>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Tags
+          </h4>
           <div className="flex flex-wrap gap-1.5">
             {icon.tags.map((tag, index) => (
-              <Badge key={index} variant="secondary" className="px-1.5 py-0 text-[10px]">
+              <Badge
+                key={index}
+                variant="secondary"
+                className="px-1.5 py-0 text-[10px]"
+              >
                 {tag}
               </Badge>
             ))}
             {icon.tags.length === 0 && (
-              <span className="text-xs text-muted-foreground italic">No tags</span>
+              <span className="text-xs text-muted-foreground italic">
+                No tags
+              </span>
             )}
           </div>
         </div>
 
-        <div className="space-y-2">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Add New Tag</h4>
+        <div className="space-y-2 hidden">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Add New Tag
+          </h4>
           <div className="flex gap-2">
             <Input
               value={newTag}
@@ -218,11 +226,17 @@ const IconDetail: React.FC<IconDetailProps> = ({
               )}
             </Button>
           </div>
-          {tagError && <p className="text-[10px] text-destructive">{tagError}</p>}
+          {tagError && (
+            <p className="text-[10px] text-destructive">{tagError}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-2 pt-2">
-          <Button variant="default" className="w-full h-9 text-sm" onClick={handleCopySvg}>
+          <Button
+            variant="default"
+            className="w-full h-9 text-sm"
+            onClick={handleCopySvg}
+          >
             <Copy className="mr-2 h-4 w-4" /> Copy SVG
           </Button>
           <Button
