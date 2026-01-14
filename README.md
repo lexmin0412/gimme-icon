@@ -6,14 +6,14 @@
 
 [![Vercel](https://img.shields.io/badge/vercel-live-green?style=flat&logo=vercel)](https://gimme-icon-next.vercel.app) [![License](https://img.shields.io/github/license/lexmin0412/gimme-icon?color=blue)](LICENSE)
 
-![搜索示例](./screenshots/search.png)
+![搜索示例](./screenshots/search_result.png)
 
 ## ✨ 为什么需要 Gimme Icon？
 
 现有的图标平台（如 Iconify、Heroicons）要求你**知道图标的确切名称或关键词**：
 
 - 想找“搜索”图标？你得输入 `search`。
-- 想找“用户头像”？你得知道它叫 `user` 或 `account`。
+- 想找"加号"图标？你得先猜猜在图标库中的名字是 `add` 还是 `plus` 还是 ...
 
 但现实中，你在寻找一个图标时，第一时间冒出的形容词为：
 - “向下的箭头”
@@ -24,12 +24,12 @@
 
 ## 功能特性
 
-- ✅ **自然语言搜索**：输入描述性语句，AI 理解意图并匹配图标
-- 🧩 **聚合多图标库**：默认支持 Heroicons、Lucide，可扩展至 Iconify 全量图标集（200+ 库）
-- 🛡️ **安全访问**：基于 GitHub OAuth 的登录认证，支持邮箱白名单控制台访问
+- ✅ **自然语言搜索**：说人话，AI 理解意图并匹配图标
+- 🧩 **聚合多图标库**：图标数据源来自 Iconify，可扩展至全量图标集（200+ 库, 20W+ 图标）
 - 🎛️ **控制台管理**：提供可视化后台，支持批量选择图标进行向量化处理
+- 🛡️ **安全访问**：基于 GitHub OAuth 的登录认证，支持区分用户权限
 - 🚀 **现代技术栈**: 基于 Next.js 16 和 React 19 构建，支持服务端渲染
-- 🌐 **开源 & 免费**：MIT 许可，可二次分发
+- 🌐 **开源 & 免费**：MIT 许可，可自由分发
 
 ## 🚀 快速体验
 
@@ -123,6 +123,7 @@ MIT License
 
 在开发和前期规划过程中，参考了以下项目进行设计：
 
-- [Iconify](https://iconify.design)：提供海量图标库资源和 API
+- [Iconify](https://iconify.design) 提供了海量图标库资源和 API
+- [Lucide](https://lucide.dev/) 提供了界面设计灵感，参考了相关交互
 - [Simple Icons](https://github.com/simple-icons/simple-icons)
 - [icones](https://github.com/antfu/icones)
