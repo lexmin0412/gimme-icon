@@ -7,7 +7,7 @@ import SearchBar from "@/app/components/SearchBar";
 import { getIconLibraries, loadIcons } from "@/services/icons";
 import { iconSearchService } from "@/services/IconSearchService";
 import { embeddingService } from "@/services/embedding";
-import { APP_NAME, INITIAL_LOAD_COUNT } from "@/constants";
+import { APP_DESCRIPTION, APP_NAME, INITIAL_LOAD_COUNT } from "@/constants";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,10 +15,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, LucideArrowBigRight, Search } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { Icon as IconifyIcon } from "@iconify/react";
+import { signIn } from "@/libs/auth-client";
 
 type LibraryInfo = {
   prefix: string;
@@ -29,6 +30,9 @@ type LibraryInfo = {
 };
 
 const ConsolePage: React.FC = () => {
+  const [authState, setAuthState] = useState<
+    "checking" | "allowed" | "denied" | "unauthenticated"
+  >("checking");
   const [libraries, setLibraries] = useState<LibraryInfo[]>([]);
   const [activeLibrary, setActiveLibrary] = useState<string>("");
   const [isLoadingLibraries, setIsLoadingLibraries] = useState<boolean>(false);
@@ -67,6 +71,27 @@ const ConsolePage: React.FC = () => {
         lib.prefix.toLowerCase().includes(lower)
     );
   }, [libraries, librarySearchQuery]);
+
+  useEffect(() => {
+    const verifyAccess = async () => {
+      try {
+        const res = await fetch("/api/console-auth");
+        if (res.status === 401) {
+          setAuthState("unauthenticated");
+          return;
+        }
+        if (!res.ok) {
+          setAuthState("denied");
+          return;
+        }
+        const data = await res.json();
+        setAuthState(data.allowed ? "allowed" : "denied");
+      } catch {
+        setAuthState("denied");
+      }
+    };
+    verifyAccess();
+  }, []);
 
   useEffect(() => {
     const init = async () => {
@@ -209,6 +234,53 @@ const ConsolePage: React.FC = () => {
     }
   };
 
+  if (authState === "checking") {
+    return (
+      <div className="flex h-screen items-center justify-center text-muted-foreground">
+        正在校验访问权限...
+      </div>
+    );
+  }
+
+  if (authState === "unauthenticated") {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="space-y-4 text-center">
+          <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            你还没有登录
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            请先登录后再访问控制台。
+          </p>
+          <div>
+            <Button
+              onClick={() => {
+                signIn();
+              }}
+            >
+              使用 GitHub 登录
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (authState === "denied") {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="space-y-3 text-center">
+          <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            无权限访问此页面
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            请联系管理员将你的账号加入允许列表。
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen bg-background">
       <aside className="w-64 border-r bg-muted/10 flex flex-col h-full overflow-hidden">
@@ -235,7 +307,7 @@ const ConsolePage: React.FC = () => {
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="搜索图标库..."
+              placeholder={isLoadingLibraries ? "Initializing..." : APP_DESCRIPTION}
               value={librarySearchQuery}
               onChange={(e) => setLibrarySearchQuery(e.target.value)}
               className="pl-8 h-9"
