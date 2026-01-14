@@ -21,7 +21,7 @@ export interface QueryResult {
 export interface ChromaCollectionAPI {
   upsert(options: { ids: string[]; embeddings: number[][]; metadatas?: Metadata[] }): Promise<void>;
   get(options: { ids?: string[] }): Promise<GetResult>;
-  query(options: { queryEmbeddings?: number[][]; nResults?: number; where?: WhereFilter }): Promise<QueryResult>;
+  query(options: { queryEmbeddings?: number[][]; nResults?: number; ids?: string[]; where?: WhereFilter }): Promise<QueryResult>;
   delete(options: { ids?: string[] }): Promise<void>;
   count(): Promise<number>;
 }
@@ -132,9 +132,8 @@ export class ChromaCollection {
     return await collection.get(options);
   }
 
-  async query(options: { queryEmbeddings?: number[][]; nResults?: number; where?: WhereFilter }): Promise<QueryResult> {
+  async query(options: { queryEmbeddings?: number[][]; nResults?: number; ids?: string[]; where?: WhereFilter }): Promise<QueryResult> {
     const collection = await this.getInstance();
-    console.log('options', options)
     return await collection.query(options);
   }
 
