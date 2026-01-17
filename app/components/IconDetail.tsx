@@ -10,7 +10,7 @@ import { embeddingService } from "@/services/embedding";
 import { Copy, Plus, X } from "lucide-react";
 import { iconSearchService } from "@/services/IconSearchService";
 
-import { ProjectSettingsDialog, useLocalProjectPath } from "./ProjectSettings";
+import { useLocalProjectPath } from "./ProjectSettings";
 
 interface IconDetailProps {
   icon: Icon;
@@ -271,7 +271,6 @@ export default initProject;
                 {icon.library}
               </p>
               </div>
-              <ProjectSettingsDialog />
             </div>
 
             <div className="flex items-center gap-1 shrink-0 -mt-1 -mr-2">

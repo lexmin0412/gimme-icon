@@ -13,6 +13,7 @@ import { APP_NAME, APP_DESCRIPTION } from "../constants";
 import { useToast } from "./components/ToastProvider";
 import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
+import { ProjectSettingsDialog } from "./components/ProjectSettings";
 
 interface HeaderProps {
   showSearchBar: boolean;
@@ -111,6 +112,7 @@ const Header: React.FC<HeaderProps> = ({
               Login
             </Button>
           )}
+          <ProjectSettingsDialog />
           <a
             href="https://github.com/lexmin0412/gimme-icon-next"
             target="_blank"
