@@ -11,6 +11,7 @@ import { Copy, Plus, X } from "lucide-react";
 import { iconSearchService } from "@/services/IconSearchService";
 
 import { useLocalProjectPath } from "./ProjectSettings";
+import { copy2Clipboard } from "@/libs/utils";
 
 interface IconDetailProps {
   icon: Icon;
@@ -30,100 +31,76 @@ const IconDetail: React.FC<IconDetailProps> = ({
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [tagError, setTagError] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  // ============ 这里修改你的【自定义配置】- 按需改，核心配置项 ============
-  const CUSTOM_FILE_NAME = 'my-next-project.js' // 要新建的文件名+后缀，支持任意格式：.js/.ts/.vue/.md/.json/.txt
-  const CUSTOM_FILE_CONTENT = `// 这是从线上Next.js应用点击创建的文件
-// 写入的指定内容，支持多行、代码、注释、变量、JSON等任意格式
-const projectName = "Next.js 唤起VSCode示例"
-const config = {
-  author: "用户",
-  createTime: new Date().toLocaleString(),
-  from: "线上Next.js应用"
-}
-
-function initProject() {
-  console.log("✅ 文件创建成功，内容已写入！");
-  return projectName;
-}
-
-// 可以写任意业务代码片段
-export default initProject;
-` // 你要写入的指定内容，想写什么就写什么
-  // =====================================================================
-
   const { path: projectPath } = useLocalProjectPath();
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
 
   // 核心方法：点击按钮执行 - 创建文件+写入内容+唤起VSCode
-  const createFileAndOpenVSCode = async (svgContent:string) => {
-    if (loading) return
-    setLoading(true)
+  const createFileAndOpenVSCode = async (svgContent: string) => {
+    if (loading) return;
+    setLoading(true);
     try {
-      console.log('projectPath', projectPath)
+      console.log("projectPath", projectPath);
       // 1. 浏览器原生API：唤起文件保存窗口，用户选择保存路径，完成授权（核心步骤）
       const fileHandle = await (window as any).showSaveFilePicker({
         suggestedName: `${icon.id}.svg`, // 推荐文件名，用户可修改
-        types: [
-          { description: '所有文件', accept: { '*/*': ['.svg'] } }
-        ],
-        excludeAcceptAllOption: false
-      })
+        types: [{ description: "所有文件", accept: { "*/*": [".svg"] } }],
+        excludeAcceptAllOption: false,
+      });
 
       // 2. 写入你预设的【指定内容】到用户选择的本地文件中
-      const writable = await fileHandle.createWritable()
-      await writable.write(svgContent) // 写入核心内容
-      await writable.close() // 完成写入，文件已在用户本地创建成功
+      const writable = await fileHandle.createWritable();
+      await writable.write(svgContent); // 写入核心内容
+      await writable.close(); // 完成写入，文件已在用户本地创建成功
 
-      console.log('fileHandle.fullPath', fileHandle.fullPath)
+      console.log("fileHandle.fullPath", fileHandle.fullPath);
 
       // 3. 提示用户文件已保存，并尝试用 VS Code 打开
       // 如果配置了本地项目路径，我们可以猜测完整路径
       if (projectPath) {
-          // 注意：这里我们只能"猜测"用户确实保存在了这个目录下，并且文件名就是 suggestedName 或者 fileHandle.name
-          const fileName = fileHandle.name;
-          const fullPath = `${projectPath}/${fileName}`.replace(/\/+/g, '/');
-          
-          showToast(`✅ 文件已保存`, "success")
-          
-          // 尝试打开 VS Code
-          const vscodeUrl = `vscode://file/${fullPath}`;
-          window.open(vscodeUrl);
-      } else {
-          showToast(`✅ 文件已保存到本地`, "success")
-      }
+        // 注意：这里我们只能"猜测"用户确实保存在了这个目录下，并且文件名就是 suggestedName 或者 fileHandle.name
+        const fileName = fileHandle.name;
+        const fullPath = `${projectPath}/${fileName}`.replace(/\/+/g, "/");
 
+        showToast(`✅ 文件已保存`, "success");
+
+        // 尝试打开 VS Code
+        const vscodeUrl = `vscode://file/${fullPath}`;
+        window.open(vscodeUrl);
+      } else {
+        showToast(`✅ 文件已保存到本地`, "success");
+      }
     } catch (error: unknown) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        showToast('ℹ️ 你取消了文件保存操作', "info")
-      } else if (!('showSaveFilePicker' in window)) {
+      if (error instanceof Error && error.name === "AbortError") {
+        showToast("ℹ️ 你取消了文件保存操作", "info");
+      } else if (!("showSaveFilePicker" in window)) {
         // Fallback: 如果不支持 showSaveFilePicker，使用传统下载方式
-        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+        const blob = new Blob([svgContent], { type: "image/svg+xml" });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
+        const a = document.createElement("a");
         a.href = url;
         a.download = `${icon.name}.svg`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showToast('✅ 文件下载成功', "success");
+        showToast("✅ 文件下载成功", "success");
       } else {
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        showToast(`❌ 保存失败：${errorMessage}`, "error")
-        console.error('保存文件失败：', error)
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        showToast(`❌ 保存失败：${errorMessage}`, "error");
+        console.error("保存文件失败：", error);
       }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleCopySvg = async () => {
     const svgContent = await fetch(
       `https://api.iconify.design/${icon.library}/${icon.name}.svg`
     ).then((res) => res.text());
     try {
-      await navigator.clipboard.writeText(svgContent);
+      await copy2Clipboard(svgContent);
       showToast("SVG copied to clipboard!", "success");
     } catch (err) {
       console.error("Failed to copy SVG:", err);
@@ -133,7 +110,7 @@ export default initProject;
 
   const handleCopyName = async () => {
     try {
-      await navigator.clipboard.writeText(icon.name);
+      await copy2Clipboard(icon.name);
       showToast("Icon name copied to clipboard!", "success");
     } catch (err) {
       console.error("Failed to copy icon name:", err);
@@ -189,10 +166,15 @@ export default initProject;
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          items: [{ icon: {
-            ...icon,
-            tags,
-          }, embedding: embedding }],
+          items: [
+            {
+              icon: {
+                ...icon,
+                tags,
+              },
+              embedding: embedding,
+            },
+          ],
         }),
       });
 
@@ -202,7 +184,7 @@ export default initProject;
       const result = await iconSearchService.getIcon(icon.id);
 
       if (result?.icon) {
-        console.log('新的图标')
+        console.log("新的图标");
       }
 
       if (!response.ok) {
@@ -226,7 +208,7 @@ export default initProject;
       const cssContent = await fetch(
         `https://api.iconify.design/${icon.library}.css?icons=${icon.name}`
       ).then((res) => res.text());
-      await navigator.clipboard.writeText(cssContent);
+      await copy2Clipboard(cssContent);
       showToast("CSS copied to clipboard!", "success");
     } catch (err) {
       console.error("Failed to copy CSS:", err);
@@ -234,68 +216,37 @@ export default initProject;
     }
   };
 
-  const handleNewReactComponent = async() => {
-    console.log('handleNewReactComponent', icon)
+  const handleNewReactComponent = async () => {
+    console.log("handleNewReactComponent", icon);
     const svgContent = await fetch(
       `https://api.iconify.design/${icon.library}/${icon.name}.svg`
     ).then((res) => res.text());
-    await createFileAndOpenVSCode(svgContent)
-  }
+    await createFileAndOpenVSCode(svgContent);
+  };
 
   return (
     <div className="flex flex-col h-full overflow-y-auto max-h-[calc(100vh-2rem)]">
       {/* 紧凑头部区域 */}
-      <div className="flex items-start gap-4 px-5 pt-4 pb-2">
+      <div className="flex items-stretch gap-4 px-5 pt-4 pb-2">
         {/* 左侧图标 */}
-        <div className="p-3 bg-muted/50 rounded-xl shrink-0 flex items-center justify-center border border-border/50">
+        <div className="h-20 w-20 bg-muted/50 rounded-xl shrink-0 flex items-center justify-center border border-border/50">
           <IconifyIcon
             icon={`${icon.library}:${icon.name}`}
-            width={40}
-            height={40}
+            width={48}
+            height={48}
             className="text-foreground"
           />
         </div>
 
         {/* 右侧信息 */}
-        <div className="flex flex-col min-w-0 flex-1 pt-0.5">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0 flex items-center gap-2">
-              <div>
-              <h3
-                className="text-lg font-bold truncate leading-tight"
-                title={icon.name}
-              >
-                {icon.name}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-1 font-medium">
-                {icon.library}
-              </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-1 shrink-0 -mt-1 -mr-2">
-              {/* 关闭按钮 */}
-              {showCloseButton && onClose && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={onClose}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-4 p-6 pt-2">
-        <div>
-          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Tags
-          </h4>
-          <div className="flex flex-wrap gap-1.5">
+        <div className="min-w-0 flex-1 pt-0.5 relative h-20">
+          <h3
+            className="text-lg h-7 leading-7 font-bold truncate"
+            title={icon.name}
+          >
+            {icon.library}:{icon.name}
+          </h3>
+          <div className="flex flex-wrap gap-1.5 mt-2">
             {icon.tags.map((tag, index) => (
               <Badge
                 key={index}
@@ -313,6 +264,20 @@ export default initProject;
           </div>
         </div>
 
+        {/* 关闭按钮 */}
+        {showCloseButton && onClose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="h-8 w-8"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      <div className="space-y-4 p-6 pt-2">
         <div className="space-y-2 hidden">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Add New Tag

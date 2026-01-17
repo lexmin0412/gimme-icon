@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { APP_DESCRIPTION } from '@/constants';
-import { cn } from '@/lib/utils';
+import { cn } from '@/libs/utils';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
