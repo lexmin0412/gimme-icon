@@ -10,6 +10,8 @@ import { embeddingService } from "@/services/embedding";
 import { Copy, Plus, X } from "lucide-react";
 import { iconSearchService } from "@/services/IconSearchService";
 
+import { ProjectSettingsDialog, useLocalProjectPath } from "./ProjectSettings";
+
 interface IconDetailProps {
   icon: Icon;
   onTagAdded?: (icon: Icon) => void;
@@ -28,6 +30,93 @@ const IconDetail: React.FC<IconDetailProps> = ({
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [tagError, setTagError] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // ============ 这里修改你的【自定义配置】- 按需改，核心配置项 ============
+  const CUSTOM_FILE_NAME = 'my-next-project.js' // 要新建的文件名+后缀，支持任意格式：.js/.ts/.vue/.md/.json/.txt
+  const CUSTOM_FILE_CONTENT = `// 这是从线上Next.js应用点击创建的文件
+// 写入的指定内容，支持多行、代码、注释、变量、JSON等任意格式
+const projectName = "Next.js 唤起VSCode示例"
+const config = {
+  author: "用户",
+  createTime: new Date().toLocaleString(),
+  from: "线上Next.js应用"
+}
+
+function initProject() {
+  console.log("✅ 文件创建成功，内容已写入！");
+  return projectName;
+}
+
+// 可以写任意业务代码片段
+export default initProject;
+` // 你要写入的指定内容，想写什么就写什么
+  // =====================================================================
+
+  const { path: projectPath } = useLocalProjectPath();
+  const [loading, setLoading] = useState(false)
+
+  // 核心方法：点击按钮执行 - 创建文件+写入内容+唤起VSCode
+  const createFileAndOpenVSCode = async (svgContent:string) => {
+    if (loading) return
+    setLoading(true)
+    try {
+      console.log('projectPath', projectPath)
+      // 1. 浏览器原生API：唤起文件保存窗口，用户选择保存路径，完成授权（核心步骤）
+      const fileHandle = await (window as any).showSaveFilePicker({
+        suggestedName: `${icon.id}.svg`, // 推荐文件名，用户可修改
+        types: [
+          { description: '所有文件', accept: { '*/*': ['.svg'] } }
+        ],
+        excludeAcceptAllOption: false
+      })
+
+      // 2. 写入你预设的【指定内容】到用户选择的本地文件中
+      const writable = await fileHandle.createWritable()
+      await writable.write(svgContent) // 写入核心内容
+      await writable.close() // 完成写入，文件已在用户本地创建成功
+
+      console.log('fileHandle.fullPath', fileHandle.fullPath)
+
+      // 3. 提示用户文件已保存，并尝试用 VS Code 打开
+      // 如果配置了本地项目路径，我们可以猜测完整路径
+      if (projectPath) {
+          // 注意：这里我们只能"猜测"用户确实保存在了这个目录下，并且文件名就是 suggestedName 或者 fileHandle.name
+          const fileName = fileHandle.name;
+          const fullPath = `${projectPath}/${fileName}`.replace(/\/+/g, '/');
+          
+          showToast(`✅ 文件已保存`, "success")
+          
+          // 尝试打开 VS Code
+          const vscodeUrl = `vscode://file/${fullPath}`;
+          window.open(vscodeUrl);
+      } else {
+          showToast(`✅ 文件已保存到本地`, "success")
+      }
+
+    } catch (error: unknown) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        showToast('ℹ️ 你取消了文件保存操作', "info")
+      } else if (!('showSaveFilePicker' in window)) {
+        // Fallback: 如果不支持 showSaveFilePicker，使用传统下载方式
+        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${icon.name}.svg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('✅ 文件下载成功', "success");
+      } else {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        showToast(`❌ 保存失败：${errorMessage}`, "error")
+        console.error('保存文件失败：', error)
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleCopySvg = async () => {
     const svgContent = await fetch(
@@ -132,6 +221,27 @@ const IconDetail: React.FC<IconDetailProps> = ({
     }
   };
 
+  const handleCopyCss = async () => {
+    try {
+      const cssContent = await fetch(
+        `https://api.iconify.design/${icon.library}.css?icons=${icon.name}`
+      ).then((res) => res.text());
+      await navigator.clipboard.writeText(cssContent);
+      showToast("CSS copied to clipboard!", "success");
+    } catch (err) {
+      console.error("Failed to copy CSS:", err);
+      showToast("Failed to copy CSS", "error");
+    }
+  };
+
+  const handleNewReactComponent = async() => {
+    console.log('handleNewReactComponent', icon)
+    const svgContent = await fetch(
+      `https://api.iconify.design/${icon.library}/${icon.name}.svg`
+    ).then((res) => res.text());
+    await createFileAndOpenVSCode(svgContent)
+  }
+
   return (
     <div className="flex flex-col h-full overflow-y-auto max-h-[calc(100vh-2rem)]">
       {/* 紧凑头部区域 */}
@@ -149,7 +259,8 @@ const IconDetail: React.FC<IconDetailProps> = ({
         {/* 右侧信息 */}
         <div className="flex flex-col min-w-0 flex-1 pt-0.5">
           <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
+            <div className="min-w-0 flex items-center gap-2">
+              <div>
               <h3
                 className="text-lg font-bold truncate leading-tight"
                 title={icon.name}
@@ -159,6 +270,8 @@ const IconDetail: React.FC<IconDetailProps> = ({
               <p className="text-xs text-muted-foreground mt-1 font-medium">
                 {icon.library}
               </p>
+              </div>
+              <ProjectSettingsDialog />
             </div>
 
             <div className="flex items-center gap-1 shrink-0 -mt-1 -mr-2">
@@ -242,9 +355,23 @@ const IconDetail: React.FC<IconDetailProps> = ({
           <Button
             variant="outline"
             className="w-full h-9 text-sm"
+            onClick={handleCopyCss}
+          >
+            <Copy className="mr-2 h-4 w-4" /> Copy CSS
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full h-9 text-sm"
             onClick={handleCopyName}
           >
             <Copy className="mr-2 h-4 w-4" /> Copy Name
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full h-9 text-sm"
+            onClick={handleNewReactComponent}
+          >
+            <Copy className="mr-2 h-4 w-4" /> React Component
           </Button>
         </div>
       </div>
