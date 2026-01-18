@@ -9,11 +9,12 @@ import { iconSearchService } from "../services/IconSearchService";
 import type { SearchResult } from "../types/icon";
 import { SearchProvider, SearchContext } from "../context/SearchContext";
 import { embeddingService } from "../services/embedding";
-import { APP_NAME, APP_DESCRIPTION } from "../constants";
+import { APP_NAME } from "../constants";
 import { useToast } from "./components/ToastProvider";
 import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
 import { ProjectSettingsDialog } from "./components/ProjectSettings";
+import { LandingHero } from "./components/LandingHero";
 
 interface HeaderProps {
   showSearchBar: boolean;
@@ -22,6 +23,7 @@ interface HeaderProps {
   user: { name?: string; image?: string | null } | null;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
+  transparent?: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -31,6 +33,7 @@ const Header: React.FC<HeaderProps> = ({
   user,
   signIn,
   signOut,
+  transparent = false,
 }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -49,7 +52,13 @@ const Header: React.FC<HeaderProps> = ({
   }, []);
 
   return (
-    <div className="shrink-0 z-50 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+    <div 
+      className={`shrink-0 z-50 transition-colors duration-300 ${
+        transparent 
+          ? "fixed top-0 left-0 right-0 bg-transparent border-transparent" 
+          : "bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800"
+      }`}
+    >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
         {/* 左侧 Logo 和 标题 */}
         <div className="flex items-center gap-2 shrink-0">
@@ -234,28 +243,12 @@ const HomeContent: React.FC<{ isAppLoading: boolean }> = ({ isAppLoading }) => {
         user={user}
         signIn={handleSignIn}
         signOut={handleSignOut}
+        transparent={!hasSearched}
       />
 
       {!hasSearched ? (
-        // 初始化状态：完全居中，只保留搜索框
-        <div className="flex-1 flex flex-col items-center justify-center px-4 -mt-16">
-          <h3 className="text-center text-2xl font-bold">
-            Welcome to {APP_NAME}
-          </h3>
-          <div className="text-gray-600 dark:text-gray-400 text-center mt-2">
-            {APP_DESCRIPTION}
-          </div>
-          <div className="w-full max-w-2xl mt-6">
-            <SearchBar
-              onSearch={handleSearch}
-              defaultValue={context?.query}
-              placeholder={isAppLoading ? "Initializing..." : APP_DESCRIPTION}
-              disabled={isAppLoading}
-              showButton={false}
-              multiline
-            />
-          </div>
-        </div>
+        // 初始化状态：Landing Page
+        <LandingHero onSearch={handleSearch} isAppLoading={isAppLoading} />
       ) : (
         // 搜索后的状态
         <>

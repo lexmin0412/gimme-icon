@@ -13,6 +13,8 @@ interface SearchBarProps {
   disabled?: boolean;
   showButton?: boolean;
   multiline?: boolean;
+  className?: string;
+  inputClassName?: string;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ 
@@ -21,7 +23,9 @@ const SearchBar: React.FC<SearchBarProps> = ({
   defaultValue = '',
   disabled = false,
   showButton = false,
-  multiline = false
+  multiline = false,
+  className,
+  inputClassName
 }) => {
   const [query, setQuery] = useState(defaultValue);
 
@@ -53,17 +57,17 @@ const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <form 
       onSubmit={handleSubmit} 
-      className="flex w-full max-w-2xl items-center gap-2 mx-auto"
+      className={cn("flex w-full max-w-2xl items-center gap-2 mx-auto", className)}
     >
       <div className="relative flex-1">
-        <Search className={cn("absolute left-3 h-4 w-4 text-muted-foreground", multiline ? 'top-3' : 'top-2.5')} />
+        <Search className={cn("absolute left-3 h-4 w-4 text-muted-foreground", multiline ? 'top-3' : 'top-1/2 -translate-y-1/2')} />
         {multiline ? (
           <textarea
             placeholder={placeholder}
             value={query}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            className="pl-9 min-h-[120px] max-h-[260px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y"
+            className={cn("pl-9 min-h-[120px] max-h-[260px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs outline-none transition-[color,box-shadow] placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm resize-y", inputClassName)}
             disabled={disabled}
           />
         ) : (
@@ -72,7 +76,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             placeholder={placeholder}
             value={query}
             onChange={handleInputChange}
-            className="pl-9"
+            className={cn("pl-9", inputClassName)}
             disabled={disabled}
           />
         )}
