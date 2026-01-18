@@ -10,9 +10,13 @@ import { CopyButtonWithPreview } from "./CopyButtonWithPreview";
 import { embeddingService } from "@/services/embedding";
 import { Copy, Plus, X, Download } from "lucide-react";
 import { iconSearchService } from "@/services/IconSearchService";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 import { useLocalProjectPath } from "./ProjectSettings";
-import { copy2Clipboard } from "@/libs/utils";
+import { copy2Clipboard, copyImage2Clipboard } from "@/libs/utils";
+
+type Framework = "React" | "Vue" | "Svelte" | "Astro" | "Solid" | "HTML/CSS";
 
 interface IconDetailProps {
   icon: Icon;
@@ -35,9 +39,11 @@ const IconDetail: React.FC<IconDetailProps> = ({
   const { path: projectPath } = useLocalProjectPath();
   const [loading, setLoading] = useState(false);
 
+  const [selectedFramework, setSelectedFramework] = useState<Framework>("HTML/CSS");
+
   // 核心方法：点击按钮执行 - 创建文件+写入内容+唤起VSCode
   const saveFileAndOpenVSCode = async (
-    content: string,
+    content: string | Blob,
     suggestedName: string,
     extensions: string[] = [".svg"]
   ) => {
@@ -80,7 +86,7 @@ const IconDetail: React.FC<IconDetailProps> = ({
         showToast("ℹ️ 你取消了文件保存操作", "info");
       } else if (!("showSaveFilePicker" in window)) {
         // Fallback: 如果不支持 showSaveFilePicker，使用传统下载方式
-        const blob = new Blob([content], { type: "text/plain" });
+        const blob = content instanceof Blob ? content : new Blob([content], { type: "text/plain" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -154,6 +160,41 @@ export default {
     return `${svelteContent}`;
   };
 
+  const generateAstroComponent = (svgContent: string) => {
+    // Astro components can receive props via Astro.props
+    // We spread these props onto the svg element
+    const astroContent = svgContent.replace(/<svg/, '<svg {...props}');
+
+    return `---
+interface Props {
+  [key: string]: any;
+}
+
+const { ...props } = Astro.props;
+---
+${astroContent}
+`;
+  };
+
+  const generateSolidComponent = (svgContent: string, name: string) => {
+    const componentName = toPascalCase(name);
+    // SolidJS uses JSX, similar to React but without the Virtual DOM overhead.
+    // Attributes are generally standard HTML attributes.
+    // We spread props onto the svg element.
+    const solidContent = svgContent.replace(/<svg/, '<svg {...props}');
+
+    return `import type { ComponentProps } from 'solid-js';
+
+const ${componentName} = (props: ComponentProps<'svg'>) => {
+  return (
+${solidContent.replace(/^/gm, "    ")}
+  );
+};
+
+export default ${componentName};
+`;
+  };
+
 
   const fetchSvgContent = async () => {
     return await fetch(
@@ -179,7 +220,18 @@ export default {
 
   const fetchSvelteComponentCode = async () => {
     const svgContent = await fetchSvgContent();
-    return generateSvelteComponent(svgContent, icon.name);
+    const svelteComponentContent = generateSvelteComponent(svgContent, icon.name);
+    return svelteComponentContent;
+  };
+
+  const fetchAstroComponentCode = async () => {
+    const svgContent = await fetchSvgContent();
+    return generateAstroComponent(svgContent);
+  };
+
+  const fetchSolidComponentCode = async () => {
+    const svgContent = await fetchSvgContent();
+    return generateSolidComponent(svgContent, icon.name);
   };
 
   const handleDownloadReactFile = async () => {
@@ -212,6 +264,97 @@ export default {
     } catch (err) {
       console.error("Failed to download Svelte component:", err);
       showToast("Failed to download Svelte component", "error");
+    }
+  };
+
+  const handleDownloadAstroFile = async () => {
+    try {
+      const code = await fetchAstroComponentCode();
+      const fileName = `${toPascalCase(icon.name)}.astro`;
+      await saveFileAndOpenVSCode(code, fileName, [".astro"]);
+    } catch (err) {
+      console.error("Failed to download Astro component:", err);
+      showToast("Failed to download Astro component", "error");
+    }
+  };
+
+  const handleDownloadSolidFile = async () => {
+    try {
+      const code = await fetchSolidComponentCode();
+      const fileName = `${toPascalCase(icon.name)}.tsx`;
+      await saveFileAndOpenVSCode(code, fileName, [".tsx", ".ts"]);
+    } catch (err) {
+      console.error("Failed to download Solid component:", err);
+      showToast("Failed to download Solid component", "error");
+    }
+  };
+
+  const convertSvgToPng = (svgContent: string, width: number, height: number): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const svgBlob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+  
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas context not found'));
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        URL.revokeObjectURL(url);
+        
+        canvas.toBlob((blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error('Canvas to Blob failed'));
+        }, 'image/png');
+      };
+      
+      img.onerror = (e) => {
+          URL.revokeObjectURL(url);
+          reject(e);
+      };
+  
+      img.src = url;
+    });
+  };
+
+  const handleCopyPng = async () => {
+    try {
+      const svgContent = await fetchSvgContent();
+      const pngBlob = await convertSvgToPng(svgContent, 512, 512);
+      await copyImage2Clipboard(pngBlob);
+      showToast("PNG copied to clipboard!", "success");
+    } catch (err) {
+      console.error("Failed to copy PNG:", err);
+      showToast("Failed to copy PNG", "error");
+    }
+  };
+
+  const handleCopySvgImage = async () => {
+     try {
+       const svgContent = await fetchSvgContent();
+       await copy2Clipboard(svgContent);
+       showToast("SVG copied to clipboard!", "success");
+     } catch (err) {
+       console.error("Failed to copy SVG:", err);
+       showToast("Failed to copy SVG", "error");
+     }
+   };
+
+  const handleDownloadPng = async () => {
+    try {
+      const svgContent = await fetchSvgContent();
+      // Default to 512x512 for high quality
+      const pngBlob = await convertSvgToPng(svgContent, 512, 512);
+      const fileName = `${icon.name}.png`;
+      await saveFileAndOpenVSCode(pngBlob, fileName, [".png"]);
+    } catch (err) {
+      console.error("Failed to download PNG:", err);
+      showToast("Failed to download PNG", "error");
     }
   };
 
@@ -355,7 +498,242 @@ export default {
       </div>
 
       <div className="space-y-4 p-6 pt-2">
-        <div className="space-y-2 hidden">
+        <Tabs defaultValue="code" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="code">Code</TabsTrigger>
+            <TabsTrigger value="image">Image</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="code" className="space-y-4 mt-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Framework:</span>
+              <Select value={selectedFramework} onValueChange={(v) => setSelectedFramework(v as Framework)}>
+                <SelectTrigger className="w-[180px] h-8">
+                  <SelectValue placeholder="Select Framework" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="HTML/CSS">HTML/CSS</SelectItem>
+                  <SelectItem value="React">React</SelectItem>
+                  <SelectItem value="Vue">Vue</SelectItem>
+                  <SelectItem value="Svelte">Svelte</SelectItem>
+                  <SelectItem value="Astro">Astro</SelectItem>
+                  <SelectItem value="Solid">Solid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Snippets Group */}
+            <div className="space-y-2">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Snippets
+              </h4>
+              <div className="grid grid-cols-2 gap-2">
+                {selectedFramework === "HTML/CSS" && (
+                  <>
+                    <CopyButtonWithPreview
+                      key={`${icon.library}:${icon.name}-svg`}
+                      variant="outline"
+                      className="w-full h-9 text-sm"
+                      contentOrFetcher={fetchSvgContent}
+                      copyMessage="SVG copied to clipboard!"
+                      language="xml"
+                    >
+                      <Copy className="mr-2 h-4 w-4" /> Copy SVG
+                    </CopyButtonWithPreview>
+                    <CopyButtonWithPreview
+                      key={`${icon.library}:${icon.name}-css`}
+                      variant="outline"
+                      className="w-full h-9 text-sm"
+                      contentOrFetcher={fetchCssContent}
+                      copyMessage="CSS copied to clipboard!"
+                      language="css"
+                    >
+                      <Copy className="mr-2 h-4 w-4" /> Copy CSS
+                    </CopyButtonWithPreview>
+                    <CopyButtonWithPreview
+                      key={`${icon.library}:${icon.name}-name`}
+                      variant="outline"
+                      className="w-full h-9 text-sm"
+                      contentOrFetcher={`${icon.library}:${icon.name}`}
+                      copyMessage="Name copied!"
+                    >
+                      <Copy className="mr-2 h-4 w-4" /> Copy Name
+                    </CopyButtonWithPreview>
+                  </>
+                )}
+                
+                {selectedFramework === "React" && (
+                  <CopyButtonWithPreview
+                    key={`${icon.library}:${icon.name}-react-snippet`}
+                    variant="outline"
+                    className="w-full h-9 text-sm"
+                    contentOrFetcher={fetchReactComponentCode} // Or a shorter snippet if available? Using full code for now as user asked for "Snippets"
+                    copyMessage="JSX copied!"
+                    language="tsx"
+                  >
+                    <Copy className="mr-2 h-4 w-4" /> Copy JSX
+                  </CopyButtonWithPreview>
+                )}
+
+                {selectedFramework === "Vue" && (
+                  <CopyButtonWithPreview
+                    key={`${icon.library}:${icon.name}-vue-snippet`}
+                    variant="outline"
+                    className="w-full h-9 text-sm"
+                    contentOrFetcher={fetchSvgContent} // Vue snippet often just SVG or <Icon />
+                    copyMessage="SVG copied!"
+                    language="html"
+                  >
+                    <Copy className="mr-2 h-4 w-4" /> Copy Template
+                  </CopyButtonWithPreview>
+                )}
+
+                 {selectedFramework === "Svelte" && (
+                  <CopyButtonWithPreview
+                    key={`${icon.library}:${icon.name}-svelte-snippet`}
+                    variant="outline"
+                    className="w-full h-9 text-sm"
+                    contentOrFetcher={fetchSvgContent}
+                    copyMessage="SVG copied!"
+                    language="html"
+                  >
+                    <Copy className="mr-2 h-4 w-4" /> Copy SVG
+                  </CopyButtonWithPreview>
+                )}
+
+                {selectedFramework === "Astro" && (
+                   <CopyButtonWithPreview
+                    key={`${icon.library}:${icon.name}-astro-snippet`}
+                    variant="outline"
+                    className="w-full h-9 text-sm"
+                    contentOrFetcher={fetchSvgContent}
+                    copyMessage="SVG copied!"
+                    language="html"
+                  >
+                    <Copy className="mr-2 h-4 w-4" /> Copy SVG
+                  </CopyButtonWithPreview>
+                )}
+
+                {selectedFramework === "Solid" && (
+                   <CopyButtonWithPreview
+                    key={`${icon.library}:${icon.name}-solid-snippet`}
+                    variant="outline"
+                    className="w-full h-9 text-sm"
+                    contentOrFetcher={fetchSvgContent}
+                    copyMessage="SVG copied!"
+                    language="tsx"
+                  >
+                    <Copy className="mr-2 h-4 w-4" /> Copy JSX
+                  </CopyButtonWithPreview>
+                )}
+              </div>
+            </div>
+
+            {/* Components Group - Only for frameworks */}
+            {selectedFramework !== "HTML/CSS" && (
+              <div className="space-y-2">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Components
+                </h4>
+                <div className="flex items-center justify-between border rounded-md p-2 pl-3">
+                  <span className="text-sm font-medium">{selectedFramework} Component</span>
+                  <div className="flex gap-2">
+                    <CopyButtonWithPreview
+                      key={`${icon.library}:${icon.name}-${selectedFramework}-comp`}
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                      contentOrFetcher={
+                        selectedFramework === "React" ? fetchReactComponentCode :
+                        selectedFramework === "Vue" ? fetchVueComponentCode :
+                        selectedFramework === "Svelte" ? fetchSvelteComponentCode :
+                        selectedFramework === "Astro" ? fetchAstroComponentCode :
+                        fetchSolidComponentCode
+                      }
+                      copyMessage={`${selectedFramework} component copied!`}
+                      title="Copy Code"
+                      language={selectedFramework === "Vue" ? "vue" : selectedFramework === "Svelte" ? "svelte" : selectedFramework === "Astro" ? "astro" : "tsx"}
+                    >
+                      <Copy className="h-4 w-4" />
+                    </CopyButtonWithPreview>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                      onClick={
+                        selectedFramework === "React" ? handleDownloadReactFile :
+                        selectedFramework === "Vue" ? handleDownloadVueFile :
+                        selectedFramework === "Svelte" ? handleDownloadSvelteFile :
+                        selectedFramework === "Astro" ? handleDownloadAstroFile :
+                        handleDownloadSolidFile
+                      }
+                      title="Download File"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="image" className="space-y-4 mt-4">
+             <div className="space-y-2">
+               <div className="flex items-center justify-between border rounded-md p-2 pl-3">
+                  <span className="text-sm font-medium">PNG Image</span>
+                  <div className="flex gap-2">
+                     <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                      onClick={handleCopyPng}
+                      title="Copy Image"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                      onClick={handleDownloadPng}
+                      title="Download PNG"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+               </div>
+
+               <div className="flex items-center justify-between border rounded-md p-2 pl-3">
+                  <span className="text-sm font-medium">SVG Image</span>
+                  <div className="flex gap-2">
+                     <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                      onClick={handleCopySvgImage}
+                      title="Copy Image"
+                    >
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 w-8 p-0"
+                      onClick={async () => {
+                        const svgContent = await fetchSvgContent();
+                        await saveFileAndOpenVSCode(svgContent, `${icon.name}.svg`, [".svg"]);
+                      }}
+                      title="Download SVG"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </div>
+               </div>
+             </div>
+          </TabsContent>
+        </Tabs>
+
+        {/* <div className="space-y-2">
           <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Add New Tag
           </h4>
@@ -383,132 +761,7 @@ export default {
           {tagError && (
             <p className="text-[10px] text-destructive">{tagError}</p>
           )}
-        </div>
-
-        {/* Snippets Group */}
-        <div className="space-y-2">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Snippets
-          </h4>
-          <div className="grid grid-cols-2 gap-2">
-            <CopyButtonWithPreview
-              key={`${icon.library}:${icon.name}-svg`}
-              variant="outline"
-              className="w-full h-9 text-sm"
-              contentOrFetcher={fetchSvgContent}
-              copyMessage="SVG copied to clipboard!"
-            >
-              <Copy className="mr-2 h-4 w-4" /> Copy SVG
-            </CopyButtonWithPreview>
-            <CopyButtonWithPreview
-              key={`${icon.library}:${icon.name}-css`}
-              variant="outline"
-              className="w-full h-9 text-sm"
-              contentOrFetcher={fetchCssContent}
-              copyMessage="CSS copied to clipboard!"
-            >
-              <Copy className="mr-2 h-4 w-4" /> Copy CSS
-            </CopyButtonWithPreview>
-            <CopyButtonWithPreview
-              key={`${icon.library}:${icon.name}-name`}
-              variant="outline"
-              className="w-full h-9 text-sm"
-              contentOrFetcher={`${icon.library}:${icon.name}`}
-              copyMessage="Name copied!"
-            >
-              <Copy className="mr-2 h-4 w-4" /> Copy Name
-            </CopyButtonWithPreview>
-          </div>
-        </div>
-
-        {/* Components Group */}
-        <div className="space-y-2">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Components
-          </h4>
-          <div className="space-y-2">
-            {/* React Component */}
-            <div className="flex items-center justify-between border rounded-md p-2 pl-3">
-              <span className="text-sm font-medium">React Component</span>
-              <div className="flex gap-2">
-                <CopyButtonWithPreview
-                  key={`${icon.library}:${icon.name}-react`}
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  contentOrFetcher={fetchReactComponentCode}
-                  copyMessage="React component copied!"
-                  title="Copy Code"
-                >
-                  <Copy className="h-4 w-4" />
-                </CopyButtonWithPreview>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  onClick={handleDownloadReactFile}
-                  title="Download File"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Vue Component */}
-            <div className="flex items-center justify-between border rounded-md p-2 pl-3">
-              <span className="text-sm font-medium">Vue Component</span>
-              <div className="flex gap-2">
-                <CopyButtonWithPreview
-                  key={`${icon.library}:${icon.name}-vue`}
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  contentOrFetcher={fetchVueComponentCode}
-                  copyMessage="Vue component copied!"
-                  title="Copy Code"
-                >
-                  <Copy className="h-4 w-4" />
-                </CopyButtonWithPreview>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  onClick={handleDownloadVueFile}
-                  title="Download File"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* Svelte Component */}
-            <div className="flex items-center justify-between border rounded-md p-2 pl-3">
-              <span className="text-sm font-medium">Svelte Component</span>
-              <div className="flex gap-2">
-                <CopyButtonWithPreview
-                  key={`${icon.library}:${icon.name}-svelte`}
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  contentOrFetcher={fetchSvelteComponentCode}
-                  copyMessage="Svelte component copied!"
-                  title="Copy Code"
-                >
-                  <Copy className="h-4 w-4" />
-                </CopyButtonWithPreview>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  onClick={handleDownloadSvelteFile}
-                  title="Download File"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
