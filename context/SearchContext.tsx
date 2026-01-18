@@ -1,4 +1,4 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useMemo, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import type { Icon, SearchResult, FilterOptions } from '../types/icon';
 import { iconSearchService } from '../services/IconSearchService';
@@ -40,7 +40,7 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   // 获取可用的过滤选项并状态化
   const [availableFilters, setAvailableFilters] = useState(iconSearchService.getFilterOptions());
 
-  const searchIcons = async () => {
+  const searchIcons = useCallback(async () => {
     setIsLoading(true);
     try {
       const searchResults = await iconSearchService.searchIcons(query, filters);
@@ -51,9 +51,9 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [query, filters]);
 
-  const value = {
+  const value = useMemo(() => ({
     query,
     setQuery,
     results,
@@ -65,7 +65,15 @@ export const SearchProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     setSelectedIcon,
     availableFilters,
     searchIcons,
-  };
+  }), [
+    query, 
+    results, 
+    isLoading, 
+    filters, 
+    selectedIcon, 
+    availableFilters, 
+    searchIcons
+  ]);
 
   return (
     <SearchContext.Provider value={value}>

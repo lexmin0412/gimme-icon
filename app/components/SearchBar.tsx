@@ -1,5 +1,5 @@
 'use client';
-import React, { startTransition, useState } from 'react';
+import React, { startTransition, useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -28,6 +28,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
   inputClassName
 }) => {
   const [query, setQuery] = useState(defaultValue);
+
+  useEffect(() => {
+    setQuery(defaultValue);
+  }, [defaultValue]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
