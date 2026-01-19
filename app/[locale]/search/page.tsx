@@ -145,7 +145,7 @@ const SearchContent: React.FC = () => {
           </div>
         ) : context?.results && context.results.length > 0 ? (
           <div className="flex-1 overflow-hidden h-full">
-            <div className="container mx-auto px-4 h-full py-4">
+            <div className="container mx-auto h-full py-4">
               <div
                 className={`flex flex-col lg:flex-row h-full transition-all duration-300 ${
                   context.selectedIcon ? "gap-4" : "gap-8"
