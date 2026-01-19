@@ -137,14 +137,14 @@ const SearchContent: React.FC = () => {
       />
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 overflow-hidden">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
             <p className="text-muted-foreground">{t('loading')}</p>
           </div>
         ) : context?.results && context.results.length > 0 ? (
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden h-full">
             <div className="container mx-auto px-4 h-full py-4">
               <div
                 className={`flex flex-col lg:flex-row h-full transition-all duration-300 ${
