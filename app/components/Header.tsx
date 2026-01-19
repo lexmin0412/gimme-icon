@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ProjectSettingsDialog } from "./ProjectSettings";
 import { APP_NAME } from "@/constants";
 import SearchBar from "./SearchBar";
+import { ModeToggle } from "./ModeToggle";
 
 interface HeaderProps {
   showSearchBar: boolean;
@@ -69,6 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* 右侧 GitHub 链接和用户信息 */}
         <div className="shrink-0 flex items-center gap-4">
+          <ModeToggle />
           {user ? (
             <div className="relative" ref={menuRef}>
               <div
