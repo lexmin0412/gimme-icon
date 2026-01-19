@@ -69,9 +69,24 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* 右侧 GitHub 链接和用户信息 */}
-        <div className="shrink-0 flex items-center gap-4">
+        <div className="shrink-0 flex items-center gap-1">
+          <ProjectSettingsDialog />
+          
           <ModeToggle />
-          {user ? (
+          
+          <Button variant="ghost" size="icon" asChild>
+            <a
+              href="https://github.com/lexmin0412/gimme-icon-next"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="GitHub Repository"
+            >
+              <Icon icon="lucide:github" className="h-[1.2rem] w-[1.2rem]" />
+            </a>
+          </Button>
+
+          <div className="ml-1">
+            {user ? (
             <div className="relative" ref={menuRef}>
               <div
                 className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
@@ -115,16 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
               Login
             </Button>
           )}
-          <ProjectSettingsDialog />
-          <a
-            href="https://github.com/lexmin0412/gimme-icon-next"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-            aria-label="GitHub Repository"
-          >
-            <Icon icon="lucide:github" className="w-6 h-6" />
-          </a>
+          </div>
         </div>
       </div>
     </div>

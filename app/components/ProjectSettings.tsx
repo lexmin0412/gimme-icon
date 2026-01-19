@@ -56,7 +56,7 @@ export const ProjectSettingsDialog: React.FC = () => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="icon" title="Project Settings">
-          <Settings className="h-4 w-4" />
+          <Settings className="h-[1.2rem] w-[1.2rem]" />
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[600px]">
