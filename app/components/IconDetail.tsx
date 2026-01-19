@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import { useLocalProjectPath } from "./ProjectSettings";
 import { copy2Clipboard, copyImage2Clipboard } from "@/libs/utils";
+import { useTranslations } from "next-intl";
 
 type Framework = "React" | "Vue" | "Svelte" | "Astro" | "Solid" | "HTML/CSS";
 
@@ -32,6 +33,8 @@ const IconDetail: React.FC<IconDetailProps> = ({
   showCloseButton = false,
 }) => {
   const { showToast } = useToast();
+  const tCommon = useTranslations("Common");
+  const tDetail = useTranslations("IconDetail");
   const [newTag, setNewTag] = useState("");
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [tagError, setTagError] = useState("");
@@ -69,21 +72,20 @@ const IconDetail: React.FC<IconDetailProps> = ({
       // 3. 提示用户文件已保存，并尝试用 VS Code 打开
       // 如果配置了本地项目路径，我们可以猜测完整路径
       if (projectPath) {
-        // 注意：这里我们只能"猜测"用户确实保存在了这个目录下，并且文件名就是 suggestedName 或者 fileHandle.name
         const fileName = fileHandle.name;
         const fullPath = `${projectPath}/${fileName}`.replace(/\/+/g, "/");
 
-        showToast(`✅ 文件已保存`, "success");
+        showToast(tCommon("fileSaved"), "success");
 
         // 尝试打开 VS Code
         const vscodeUrl = `vscode://file/${fullPath}`;
         window.open(vscodeUrl);
       } else {
-        showToast(`✅ 文件已保存到本地`, "success");
+        showToast(tCommon("fileSavedLocal"), "success");
       }
     } catch (error: unknown) {
       if (error instanceof Error && error.name === "AbortError") {
-        showToast("ℹ️ 你取消了文件保存操作", "info");
+        showToast(tCommon("fileSaveCanceled"), "info");
       } else if (!("showSaveFilePicker" in window)) {
         // Fallback: 如果不支持 showSaveFilePicker，使用传统下载方式
         const blob = content instanceof Blob ? content : new Blob([content], { type: "text/plain" });
@@ -95,11 +97,11 @@ const IconDetail: React.FC<IconDetailProps> = ({
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        showToast("✅ 文件下载成功", "success");
+        showToast(tCommon("fileDownloadSuccess"), "success");
       } else {
         const errorMessage =
           error instanceof Error ? error.message : String(error);
-        showToast(`❌ 保存失败：${errorMessage}`, "error");
+        showToast(tCommon("fileSaveFailed", { error: errorMessage }), "error");
         console.error("保存文件失败：", error);
       }
     } finally {
@@ -241,7 +243,7 @@ export default ${componentName};
       await saveFileAndOpenVSCode(code, fileName, [".tsx", ".ts"]);
     } catch (err) {
       console.error("Failed to download React component:", err);
-      showToast("Failed to download React component", "error");
+      showToast(tCommon("failedDownloadReactComponent"), "error");
     }
   };
 
@@ -252,7 +254,7 @@ export default ${componentName};
       await saveFileAndOpenVSCode(code, fileName, [".vue"]);
     } catch (err) {
       console.error("Failed to download Vue component:", err);
-      showToast("Failed to download Vue component", "error");
+      showToast(tCommon("failedDownloadVueComponent"), "error");
     }
   };
 
@@ -263,7 +265,7 @@ export default ${componentName};
       await saveFileAndOpenVSCode(code, fileName, [".svelte"]);
     } catch (err) {
       console.error("Failed to download Svelte component:", err);
-      showToast("Failed to download Svelte component", "error");
+      showToast(tCommon("failedDownloadSvelteComponent"), "error");
     }
   };
 
@@ -274,7 +276,7 @@ export default ${componentName};
       await saveFileAndOpenVSCode(code, fileName, [".astro"]);
     } catch (err) {
       console.error("Failed to download Astro component:", err);
-      showToast("Failed to download Astro component", "error");
+      showToast(tCommon("failedDownloadAstroComponent"), "error");
     }
   };
 
@@ -285,7 +287,7 @@ export default ${componentName};
       await saveFileAndOpenVSCode(code, fileName, [".tsx", ".ts"]);
     } catch (err) {
       console.error("Failed to download Solid component:", err);
-      showToast("Failed to download Solid component", "error");
+      showToast(tCommon("failedDownloadSolidComponent"), "error");
     }
   };
 
@@ -327,10 +329,10 @@ export default ${componentName};
       const svgContent = await fetchSvgContent();
       const pngBlob = await convertSvgToPng(svgContent, 512, 512);
       await copyImage2Clipboard(pngBlob);
-      showToast("PNG copied to clipboard!", "success");
+      showToast(tCommon("copyPngToClipboardSuccess"), "success");
     } catch (err) {
       console.error("Failed to copy PNG:", err);
-      showToast("Failed to copy PNG", "error");
+      showToast(tCommon("copyPngToClipboardFailed"), "error");
     }
   };
 
@@ -338,10 +340,10 @@ export default ${componentName};
      try {
        const svgContent = await fetchSvgContent();
        await copy2Clipboard(svgContent);
-       showToast("SVG copied to clipboard!", "success");
+       showToast(tCommon("copySvgToClipboardSuccess"), "success");
      } catch (err) {
        console.error("Failed to copy SVG:", err);
-       showToast("Failed to copy SVG", "error");
+       showToast(tCommon("copySvgToClipboardFailed"), "error");
      }
    };
 
@@ -354,14 +356,14 @@ export default ${componentName};
       await saveFileAndOpenVSCode(pngBlob, fileName, [".png"]);
     } catch (err) {
       console.error("Failed to download PNG:", err);
-      showToast("Failed to download PNG", "error");
+      showToast(tCommon("downloadPngFailed"), "error");
     }
   };
 
 
   const handleAddTag = async () => {
     if (!newTag.trim()) {
-      setTagError("Please enter a tag");
+      setTagError(tDetail("enterTag"));
       return;
     }
 
@@ -373,7 +375,9 @@ export default ${componentName};
       await handleRefreshEmbedding([...icon.tags, newTag.trim()]);
       setTagError("");
     } catch (error) {
-      setTagError(error instanceof Error ? error.message : "Failed to add tag");
+      setTagError(
+        error instanceof Error ? error.message : tDetail("addTagFailed")
+      );
     } finally {
       setIsAddingTag(false);
     }
@@ -384,7 +388,7 @@ export default ${componentName};
     }
     // 重置输入
     setNewTag("");
-    showToast("Tag added successfully!", "success");
+    showToast(tCommon("tagAdded"), "success");
   };
 
   const handleRefreshEmbedding = async (customTags?: string[]) => {
@@ -432,11 +436,11 @@ export default ${componentName};
         throw new Error(data.error || "Failed to refresh embedding");
       }
 
-      showToast("Embedding refreshed successfully!", "success");
+      showToast(tCommon("embeddingRefreshed"), "success");
     } catch (error) {
       console.error("Failed to refresh embedding:", error);
       showToast(
-        error instanceof Error ? error.message : "Failed to refresh embedding",
+        error instanceof Error ? error.message : tCommon("embeddingRefreshFailed"),
         "error"
       );
     } finally {
@@ -478,7 +482,7 @@ export default ${componentName};
             ))}
             {icon.tags.length === 0 && (
               <span className="text-xs text-muted-foreground italic">
-                No tags
+                {tDetail("noTags")}
               </span>
             )}
           </div>
@@ -500,16 +504,18 @@ export default ${componentName};
       <div className="space-y-4 p-6 pt-2">
         <Tabs defaultValue="code" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="code">Code</TabsTrigger>
-            <TabsTrigger value="image">Image</TabsTrigger>
+            <TabsTrigger value="code">{tDetail("codeTab")}</TabsTrigger>
+            <TabsTrigger value="image">{tDetail("imageTab")}</TabsTrigger>
           </TabsList>
           
           <TabsContent value="code" className="space-y-4 mt-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Framework:</span>
+              <span className="text-sm font-medium">
+                {tDetail("frameworkLabel")}
+              </span>
               <Select value={selectedFramework} onValueChange={(v) => setSelectedFramework(v as Framework)}>
                 <SelectTrigger className="w-[180px] h-8">
-                  <SelectValue placeholder="Select Framework" />
+                  <SelectValue placeholder={tDetail("selectFramework")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="HTML/CSS">HTML/CSS</SelectItem>
@@ -525,7 +531,7 @@ export default ${componentName};
             {/* Snippets Group */}
             <div className="space-y-2">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Snippets
+                {tDetail("snippets")}
               </h4>
               <div className="grid grid-cols-2 gap-2">
                 {selectedFramework === "HTML/CSS" && (
@@ -535,29 +541,29 @@ export default ${componentName};
                       variant="outline"
                       className="w-full h-9 text-sm"
                       contentOrFetcher={fetchSvgContent}
-                      copyMessage="SVG copied to clipboard!"
+                      copyMessage={tDetail("copySvgSuccess")}
                       language="xml"
                     >
-                      <Copy className="mr-2 h-4 w-4" /> Copy SVG
+                      <Copy className="mr-2 h-4 w-4" /> {tDetail("copySvg")}
                     </CopyButtonWithPreview>
                     <CopyButtonWithPreview
                       key={`${icon.library}:${icon.name}-css`}
                       variant="outline"
                       className="w-full h-9 text-sm"
                       contentOrFetcher={fetchCssContent}
-                      copyMessage="CSS copied to clipboard!"
+                      copyMessage={tDetail("copyCssSuccess")}
                       language="css"
                     >
-                      <Copy className="mr-2 h-4 w-4" /> Copy CSS
+                      <Copy className="mr-2 h-4 w-4" /> {tDetail("copyCss")}
                     </CopyButtonWithPreview>
                     <CopyButtonWithPreview
                       key={`${icon.library}:${icon.name}-name`}
                       variant="outline"
                       className="w-full h-9 text-sm"
                       contentOrFetcher={`${icon.library}:${icon.name}`}
-                      copyMessage="Name copied!"
+                      copyMessage={tDetail("copyNameSuccess")}
                     >
-                      <Copy className="mr-2 h-4 w-4" /> Copy Name
+                      <Copy className="mr-2 h-4 w-4" /> {tDetail("copyName")}
                     </CopyButtonWithPreview>
                   </>
                 )}
@@ -568,10 +574,10 @@ export default ${componentName};
                     variant="outline"
                     className="w-full h-9 text-sm"
                     contentOrFetcher={fetchReactComponentCode} // Or a shorter snippet if available? Using full code for now as user asked for "Snippets"
-                    copyMessage="JSX copied!"
+                    copyMessage={tDetail("copyJsxSuccess")}
                     language="tsx"
                   >
-                    <Copy className="mr-2 h-4 w-4" /> Copy JSX
+                    <Copy className="mr-2 h-4 w-4" /> {tDetail("copyJsx")}
                   </CopyButtonWithPreview>
                 )}
 
@@ -581,10 +587,10 @@ export default ${componentName};
                     variant="outline"
                     className="w-full h-9 text-sm"
                     contentOrFetcher={fetchSvgContent} // Vue snippet often just SVG or <Icon />
-                    copyMessage="SVG copied!"
+                    copyMessage={tDetail("copySvgSuccess")}
                     language="html"
                   >
-                    <Copy className="mr-2 h-4 w-4" /> Copy Template
+                    <Copy className="mr-2 h-4 w-4" /> {tDetail("copyTemplate")}
                   </CopyButtonWithPreview>
                 )}
 
@@ -594,10 +600,10 @@ export default ${componentName};
                     variant="outline"
                     className="w-full h-9 text-sm"
                     contentOrFetcher={fetchSvgContent}
-                    copyMessage="SVG copied!"
+                    copyMessage={tDetail("copySvgSuccess")}
                     language="html"
                   >
-                    <Copy className="mr-2 h-4 w-4" /> Copy SVG
+                    <Copy className="mr-2 h-4 w-4" /> {tDetail("copySvg")}
                   </CopyButtonWithPreview>
                 )}
 
@@ -607,10 +613,10 @@ export default ${componentName};
                     variant="outline"
                     className="w-full h-9 text-sm"
                     contentOrFetcher={fetchSvgContent}
-                    copyMessage="SVG copied!"
+                    copyMessage={tDetail("copySvgSuccess")}
                     language="html"
                   >
-                    <Copy className="mr-2 h-4 w-4" /> Copy SVG
+                    <Copy className="mr-2 h-4 w-4" /> {tDetail("copySvg")}
                   </CopyButtonWithPreview>
                 )}
 
@@ -620,10 +626,10 @@ export default ${componentName};
                     variant="outline"
                     className="w-full h-9 text-sm"
                     contentOrFetcher={fetchSvgContent}
-                    copyMessage="SVG copied!"
+                    copyMessage={tDetail("copySvgSuccess")}
                     language="tsx"
                   >
-                    <Copy className="mr-2 h-4 w-4" /> Copy JSX
+                    <Copy className="mr-2 h-4 w-4" /> {tDetail("copyJsx")}
                   </CopyButtonWithPreview>
                 )}
               </div>
@@ -633,10 +639,12 @@ export default ${componentName};
             {selectedFramework !== "HTML/CSS" && (
               <div className="space-y-2">
                 <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Components
+                  {tDetail("components")}
                 </h4>
                 <div className="flex items-center justify-between border rounded-md p-2 pl-3">
-                  <span className="text-sm font-medium">{selectedFramework} Component</span>
+                  <span className="text-sm font-medium">
+                    {selectedFramework} {tDetail("componentSuffix")}
+                  </span>
                   <div className="flex gap-2">
                     <CopyButtonWithPreview
                       key={`${icon.library}:${icon.name}-${selectedFramework}-comp`}
@@ -650,8 +658,10 @@ export default ${componentName};
                         selectedFramework === "Astro" ? fetchAstroComponentCode :
                         fetchSolidComponentCode
                       }
-                      copyMessage={`${selectedFramework} component copied!`}
-                      title="Copy Code"
+                      copyMessage={tDetail("componentCopied", {
+                        framework: selectedFramework,
+                      })}
+                      title={tDetail("copyCode")}
                       language={selectedFramework === "Vue" ? "vue" : selectedFramework === "Svelte" ? "svelte" : selectedFramework === "Astro" ? "astro" : "tsx"}
                     >
                       <Copy className="h-4 w-4" />
@@ -680,14 +690,16 @@ export default ${componentName};
           <TabsContent value="image" className="space-y-4 mt-4">
              <div className="space-y-2">
                <div className="flex items-center justify-between border rounded-md p-2 pl-3">
-                  <span className="text-sm font-medium">PNG Image</span>
+                  <span className="text-sm font-medium">
+                    {tDetail("pngImage")}
+                  </span>
                   <div className="flex gap-2">
                      <Button
                       size="sm"
                       variant="ghost"
                       className="h-8 w-8 p-0"
                       onClick={handleCopyPng}
-                      title="Copy Image"
+                      title={tDetail("copyImage")}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -696,7 +708,7 @@ export default ${componentName};
                       variant="ghost"
                       className="h-8 w-8 p-0"
                       onClick={handleDownloadPng}
-                      title="Download PNG"
+                      title={tDetail("downloadPng")}
                     >
                       <Download className="h-4 w-4" />
                     </Button>
@@ -704,14 +716,16 @@ export default ${componentName};
                </div>
 
                <div className="flex items-center justify-between border rounded-md p-2 pl-3">
-                  <span className="text-sm font-medium">SVG Image</span>
+                  <span className="text-sm font-medium">
+                    {tDetail("svgImage")}
+                  </span>
                   <div className="flex gap-2">
                      <Button
                       size="sm"
                       variant="ghost"
                       className="h-8 w-8 p-0"
                       onClick={handleCopySvgImage}
-                      title="Copy Image"
+                      title={tDetail("copyImage")}
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -723,7 +737,7 @@ export default ${componentName};
                         const svgContent = await fetchSvgContent();
                         await saveFileAndOpenVSCode(svgContent, `${icon.name}.svg`, [".svg"]);
                       }}
-                      title="Download SVG"
+                      title={tDetail("downloadSvg")}
                     >
                       <Download className="h-4 w-4" />
                     </Button>

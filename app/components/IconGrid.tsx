@@ -6,6 +6,7 @@ import { INITIAL_LOAD_COUNT } from "@/constants";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslations } from "next-intl";
 
 interface IconGridProps {
   results: SearchResult[];
@@ -26,6 +27,7 @@ const IconGrid: React.FC<IconGridProps> = ({
   isCompact = false,
   loading = false
 }) => {
+  const t = useTranslations('Search');
   // 首屏加载INITIAL_LOAD_COUNT个图标，每次加载INITIAL_LOAD_COUNT个
   const [visibleCount, setVisibleCount] = useState(INITIAL_LOAD_COUNT);
   const [isLoading, setIsLoading] = useState(false);
@@ -95,7 +97,7 @@ const IconGrid: React.FC<IconGridProps> = ({
   if (results.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-        <p>No icons found. Try adjusting your search or filters.</p>
+        <p>{t('noResults')}</p>
       </div>
     );
   }
@@ -156,11 +158,14 @@ const IconGrid: React.FC<IconGridProps> = ({
           {isLoading ? (
             <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400">
               <div className="w-4 h-4 border-2 border-gray-300 border-t-blue-500 rounded-full animate-spin dark:border-gray-600 dark:border-t-blue-400"></div>
-              <span>Loading more icons...</span>
+              <span>{t("loadingMoreIcons")}</span>
             </div>
           ) : (
             <div className="text-gray-500 dark:text-gray-400">
-              Scroll down to load more icons ({visibleCount}/{results.length})
+              {t("scrollToLoadMoreIcons", {
+                visible: visibleCount,
+                total: results.length,
+              })}
             </div>
           )}
         </div>
@@ -169,7 +174,9 @@ const IconGrid: React.FC<IconGridProps> = ({
       {/* 如果已经加载了所有图标，显示完成信息 */}
       {visibleCount >= results.length && results.length > 0 && (
         <div className="flex items-center justify-center py-8 text-gray-500 dark:text-gray-400">
-          <span>All {results.length} icons loaded</span>
+          <span>
+            {t("allIconsLoaded", { count: results.length })}
+          </span>
         </div>
       )}
     </div>

@@ -12,6 +12,7 @@ import { copy2Clipboard } from "@/libs/utils";
 import { useToast } from "@/app/components/ToastProvider";
 import { Loader2 } from "lucide-react";
 import { highlight } from "@/libs/code-highlight";
+import { useTranslations } from "next-intl";
 
 type ButtonProps = React.ComponentProps<typeof Button>;
 
@@ -34,6 +35,7 @@ export const CopyButtonWithPreview = ({
   );
   const [rawContent, setRawContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const tCommon = useTranslations("Common");
 
   const handleMouseEnter = async () => {
     if (previewContent) return;
@@ -59,7 +61,7 @@ export const CopyButtonWithPreview = ({
       }
     } catch (error) {
       console.error("Failed to fetch preview content", error);
-      setPreviewContent("Failed to load preview");
+      setPreviewContent(tCommon("previewLoadFailed"));
     } finally {
       setLoading(false);
     }
@@ -80,7 +82,7 @@ export const CopyButtonWithPreview = ({
           setRawContent(contentToCopy);
         } catch (e) {
           console.error(e);
-          showToast("Failed to fetch content", "error");
+          showToast(tCommon("fetchContentFailed"), "error");
           return;
         }
       }
@@ -88,7 +90,8 @@ export const CopyButtonWithPreview = ({
 
     if (contentToCopy) {
       await copy2Clipboard(contentToCopy);
-      showToast(copyMessage, "success");
+      const message = copyMessage ?? tCommon("copiedToClipboard");
+      showToast(message, "success");
     }
   };
 
@@ -112,11 +115,11 @@ export const CopyButtonWithPreview = ({
           {loading ? (
             <div className="flex items-center gap-2 rounded-md border bg-popover px-3 py-1.5 text-xs text-popover-foreground shadow-md">
               <Loader2 className="h-4 w-4 animate-spin" />
-              <span>Loading preview...</span>
+              <span>{tCommon("loadingPreview")}</span>
             </div>
           ) : typeof previewContent === "string" ? (
             <div className="max-w-[400px] whitespace-pre-wrap rounded-md border bg-popover px-3 py-1.5 font-mono text-xs text-popover-foreground shadow-md">
-              {previewContent || "Loading..."}
+              {previewContent || tCommon("loading")}
             </div>
           ) : (
             <div className="text-xs [&>pre]:max-h-[400px] [&>pre]:max-w-[500px] [&>pre]:overflow-auto [&>pre]:rounded-md [&>pre]:border [&>pre]:p-3 [&>pre]:shadow-md [&>pre]:font-mono">

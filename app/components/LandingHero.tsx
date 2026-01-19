@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Cabin_Sketch } from "next/font/google";
 import SearchBar from "./SearchBar";
 import { cn } from "@/libs/utils";
+import { useTranslations } from "next-intl";
 
 const cabinSketch = Cabin_Sketch({ 
   subsets: ["latin"],
@@ -20,6 +21,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
   onSearch,
   isAppLoading,
 }) => {
+  const t = useTranslations('Landing');
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -101,8 +103,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
           transition={{ delay: 0.4, duration: 0.8 }}
           className="text-lg md:text-2xl text-muted-foreground text-center max-w-xl mb-12 font-medium tracking-tight leading-relaxed"
         >
-          {/* The missing icon library for your next big idea. <br className="hidden sm:block"/> */}
-          <span className="text-foreground/80 italic font-serif">Search naturally, copy code or download component instantly.</span>
+          {t('subtitle')}
         </motion.p>
 
         {/* Search Area */}
@@ -117,7 +118,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
             <div className="relative bg-background/80 backdrop-blur-xl rounded-xl border shadow-2xl p-2">
               <SearchBar
                 onSearch={onSearch}
-                placeholder={isAppLoading ? "Initializing neural network..." : "Describe the icon you need (e.g., 'settings gear', 'user profile')"}
+                placeholder={isAppLoading ? t("initializing") : t("searchPlaceholder")}
                 disabled={isAppLoading}
                 showButton={true}
                 className="w-full"
@@ -129,7 +130,13 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
           
           {/* Quick Tags */}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {["User Interface", "Arrows", "Social", "Development", "Weather"].map((tag, i) => (
+            {[
+              t("quickTagUserInterface"),
+              t("quickTagArrows"),
+              t("quickTagSocial"),
+              t("quickTagDevelopment"),
+              t("quickTagWeather"),
+            ].map((tag, i) => (
               <motion.button
                 key={tag}
                 initial={{ opacity: 0, y: 10 }}
@@ -152,7 +159,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
         transition={{ delay: 1.5, duration: 1 }}
         className="absolute bottom-8 text-xs text-muted-foreground/50 tracking-widest uppercase font-semibold"
       >
-        Designed for Creators
+        {t("designedForCreators")}
       </motion.div>
     </div>
   );

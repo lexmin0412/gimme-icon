@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { Icon as IconifyIcon } from "@iconify/react";
 import { signIn } from "@/libs/auth-client";
+import { useTranslations } from "next-intl";
 
 type LibraryInfo = {
   prefix: string;
@@ -30,6 +31,8 @@ type LibraryInfo = {
 };
 
 const ConsolePage: React.FC = () => {
+  const tConsole = useTranslations("Console");
+  const tHeader = useTranslations("Header");
   const [authState, setAuthState] = useState<
     "checking" | "allowed" | "denied" | "unauthenticated"
   >("checking");
@@ -237,7 +240,7 @@ const ConsolePage: React.FC = () => {
   if (authState === "checking") {
     return (
       <div className="flex h-screen items-center justify-center text-muted-foreground">
-        正在校验访问权限...
+        {tConsole("verifyingAccess")}
       </div>
     );
   }
@@ -247,10 +250,10 @@ const ConsolePage: React.FC = () => {
       <div className="flex h-screen items-center justify-center">
         <div className="space-y-4 text-center">
           <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            你还没有登录
+            {tConsole("notLoggedIn")}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            请先登录后再访问控制台。
+            {tConsole("pleaseLogin")}
           </p>
           <div>
             <Button
@@ -258,7 +261,7 @@ const ConsolePage: React.FC = () => {
                 signIn();
               }}
             >
-              使用 GitHub 登录
+              {tConsole("loginWithGithub")}
             </Button>
           </div>
         </div>
@@ -271,10 +274,10 @@ const ConsolePage: React.FC = () => {
       <div className="flex h-screen items-center justify-center">
         <div className="space-y-3 text-center">
           <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-            无权限访问此页面
+            {tConsole("accessDenied")}
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            请联系管理员将你的账号加入允许列表。
+            {tConsole("noPermissionDetail")}
           </p>
         </div>
       </div>
@@ -298,7 +301,7 @@ const ConsolePage: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-                aria-label="GitHub Repository"
+                aria-label={tHeader("githubRepo")}
               >
                 <IconifyIcon icon="lucide:github" className="w-5 h-5" />
               </a>
@@ -307,7 +310,11 @@ const ConsolePage: React.FC = () => {
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={isLoadingLibraries ? "Initializing..." : APP_DESCRIPTION}
+              placeholder={
+                isLoadingLibraries
+                  ? tConsole("initializing")
+                  : tConsole("searchLibrariesPlaceholder")
+              }
               value={librarySearchQuery}
               onChange={(e) => setLibrarySearchQuery(e.target.value)}
               className="pl-8 h-9"
@@ -342,7 +349,7 @@ const ConsolePage: React.FC = () => {
             )}
             {!isLoadingLibraries && filteredLibraries.length === 0 && (
               <div className="p-4 text-center text-sm text-muted-foreground">
-                未找到相关图标库
+                {tConsole("noLibrariesFound")}
               </div>
             )}
           </div>
@@ -355,8 +362,10 @@ const ConsolePage: React.FC = () => {
             <div>
               {activeLibraryInfo && (
                 <p className="text-muted-foreground">
-                  当前库：{activeLibraryInfo.name} ({activeLibraryInfo.total}{" "}
-                  icons)
+                  {tConsole("currentLibrarySummary", {
+                    name: activeLibraryInfo.name,
+                    total: activeLibraryInfo.total,
+                  })}
                 </p>
               )}
             </div>
@@ -370,8 +379,12 @@ const ConsolePage: React.FC = () => {
         >
           <div className="flex items-center justify-between border-b px-6 pb-4">
             <TabsList>
-              <TabsTrigger value="vectorize">向量化管理</TabsTrigger>
-              <TabsTrigger value="search">搜索测试</TabsTrigger>
+              <TabsTrigger value="vectorize">
+                {tConsole("vectorizeTab")}
+              </TabsTrigger>
+              <TabsTrigger value="search">
+                {tConsole("searchTab")}
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -383,7 +396,9 @@ const ConsolePage: React.FC = () => {
               <div className="flex-1">
                 <SearchBar
                   onSearch={handleSearch}
-                  placeholder={`在 ${activeLibrary || "库"} 中搜索...`}
+                  placeholder={tConsole("searchInLibrary", {
+                    library: activeLibrary || tConsole("defaultLibrary"),
+                  })}
                 />
               </div>
               <div className="flex items-center space-x-2">
@@ -394,7 +409,9 @@ const ConsolePage: React.FC = () => {
                     setUseVectorSearch(checked as boolean)
                   }
                 />
-                <Label htmlFor="vector-search">语义检索 (Chroma)</Label>
+                <Label htmlFor="vector-search">
+                  {tConsole("semanticSearchLabel")}
+                </Label>
               </div>
             </div>
 
@@ -408,7 +425,7 @@ const ConsolePage: React.FC = () => {
                   />
                 ) : (
                   <div className="flex items-center justify-center h-64 text-muted-foreground">
-                    Enter a keyword to search
+                    {tConsole("enterKeywordToSearch")}
                   </div>
                 )}
               </div>
@@ -425,17 +442,19 @@ const ConsolePage: React.FC = () => {
                   variant={isSelectionMode ? "secondary" : "outline"}
                   onClick={handleToggleSelectionMode}
                 >
-                  批量选择
+                  {tConsole("batchSelect")}
                 </Button>
                 {isSelectionMode && (
                   <>
                     <span className="text-sm text-muted-foreground">
-                      已选 {selectedIconIds.size}
+                      {tConsole("selectedCount", {
+                        count: selectedIconIds.size,
+                      })}
                     </span>
                     <Button variant="ghost" onClick={handleSelectAll}>
                       {selectedIconIds.size === iconResults.length
-                        ? "取消全选"
-                        : "全选"}
+                        ? tConsole("deselectAll")
+                        : tConsole("selectAll")}
                     </Button>
                   </>
                 )}
@@ -447,7 +466,9 @@ const ConsolePage: React.FC = () => {
                 {isBatchEmbedding && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                {isBatchEmbedding ? "Embedding..." : "开始 Embedding"}
+                {isBatchEmbedding
+                  ? tConsole("embeddingInProgress")
+                  : tConsole("startEmbedding")}
               </Button>
             </div>
 

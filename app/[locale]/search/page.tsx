@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect, useContext, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
+import { useSearchParams } from "next/navigation";
 import { authClient, signIn, signOut } from "@/libs/auth-client";
 import IconGrid from "@/app/components/IconGrid";
 import IconDetail from "@/app/components/IconDetail";
@@ -10,8 +11,11 @@ import type { SearchResult } from "@/types/icon";
 import { SearchProvider, SearchContext } from "@/context/SearchContext";
 import { embeddingService } from "@/services/embedding";
 import { useToast } from "@/app/components/ToastProvider";
+import { useTranslations } from "next-intl";
 
 const SearchContent: React.FC = () => {
+  const t = useTranslations("Search");
+  const tCommon = useTranslations("Common");
   const context = useContext(SearchContext);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -36,7 +40,7 @@ const SearchContent: React.FC = () => {
       context.setResults(results);
     } catch (error) {
       console.error("Search failed:", error);
-      showToast("Search failed, please try again", "error");
+      showToast(t("searchFailed"), "error");
     } finally {
       setIsLoading(false);
     }
@@ -53,7 +57,7 @@ const SearchContent: React.FC = () => {
   // Handle search query (UI interaction)
   const handleSearch = (query: string) => {
     if (!query.trim()) {
-      showToast("Please enter a keyword", "error");
+      showToast(t("enterKeyword"), "error");
       return;
     }
     
@@ -87,10 +91,10 @@ const SearchContent: React.FC = () => {
     try {
       await signOut();
       setUser(null);
-      showToast("Signed out successfully", "success");
+      showToast(tCommon("signedOut"), "success");
     } catch (error) {
       console.error("Sign out failed:", error);
-      showToast("Failed to sign out", "error");
+      showToast(tCommon("signOutFailed"), "error");
     }
   };
 
@@ -114,7 +118,7 @@ const SearchContent: React.FC = () => {
   if (!context) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        Search context not available
+        <p className="text-muted-foreground">{t("contextUnavailable")}</p>
       </div>
     );
   }
@@ -132,47 +136,62 @@ const SearchContent: React.FC = () => {
         signOut={handleSignOut}
       />
 
-      <div className="flex-1 overflow-hidden">
-        <div className="container mx-auto px-4 h-full py-4">
-          <div
-            className={`flex flex-col lg:flex-row h-full transition-all duration-300 ${
-              isSelected ? "gap-4" : "gap-8"
-            }`}
-          >
-            {/* Left Grid Area */}
-            <div
-              className={`transition-all duration-300 ease-in-out overflow-y-auto ${
-                isSelected
-                  ? "lg:w-7/12 w-full h-1/2 lg:h-full"
-                  : "w-full h-full"
-              }`}
-            >
-              <IconGrid
-                results={context?.results || []}
-                onIconClick={handleIconClick}
-                isCompact={isSelected}
-                loading={isLoading}
-              />
-            </div>
-
-            {/* Right Detail Area */}
-            {context.selectedIcon && (
-              <div className="lg:w-5/12 w-full h-1/2 lg:h-full overflow-y-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
-                <IconDetail
-                  icon={context.selectedIcon}
-                  onClose={handleClosePreview}
-                  showCloseButton={true}
-                />
-              </div>
-            )}
+      {/* Main Content */}
+      <main className="flex-1 container mx-auto px-4 py-8">
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+            <p className="text-muted-foreground">{t('loading')}</p>
           </div>
-        </div>
-      </div>
+        ) : context?.results && context.results.length > 0 ? (
+          <div className="flex-1 overflow-hidden">
+            <div className="container mx-auto px-4 h-full py-4">
+              <div
+                className={`flex flex-col lg:flex-row h-full transition-all duration-300 ${
+                  context.selectedIcon ? "gap-4" : "gap-8"
+                }`}
+              >
+                {/* Left Grid Area */}
+                <div
+                  className={`transition-all duration-300 ease-in-out overflow-y-auto ${
+                    context.selectedIcon
+                      ? "lg:w-7/12 w-full h-1/2 lg:h-full"
+                      : "w-full h-full"
+                  }`}
+                >
+                  <IconGrid
+                    results={context.results}
+                    onIconClick={handleIconClick}
+                    isCompact={!!context.selectedIcon}
+                    loading={isLoading}
+                  />
+                </div>
+
+                {/* Right Detail Area */}
+                {context.selectedIcon && (
+                  <div className="lg:w-5/12 w-full h-1/2 lg:h-full overflow-y-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+                    <IconDetail
+                      icon={context.selectedIcon}
+                      onClose={handleClosePreview}
+                      showCloseButton={true}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <p className="text-xl text-muted-foreground">{t('noResults')}</p>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
 
 const SearchPage: React.FC = () => {
+  const t = useTranslations("Search");
   // Initialize services if needed (might be redundant if already initialized in layout or root, 
   // but good to ensure availability)
   useEffect(() => {
@@ -190,7 +209,13 @@ const SearchPage: React.FC = () => {
 
   return (
     <SearchProvider>
-      <React.Suspense fallback={<div className="flex h-screen items-center justify-center">Loading...</div>}>
+      <React.Suspense
+        fallback={
+          <div className="flex h-screen items-center justify-center text-muted-foreground">
+            {t("loading")}
+          </div>
+        }
+      >
         <SearchContent />
       </React.Suspense>
     </SearchProvider>

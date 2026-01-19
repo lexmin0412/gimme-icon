@@ -1,12 +1,13 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing";
 import { authClient, signIn, signOut } from "@/libs/auth-client";
-import { embeddingService } from "../services/embedding";
-import { iconSearchService } from "../services/IconSearchService";
-import { useToast } from "./components/ToastProvider";
-import { LandingHero } from "./components/LandingHero";
-import { Header } from "./components/Header";
+import { embeddingService } from "@/services/embedding";
+import { iconSearchService } from "@/services/IconSearchService";
+import { useToast } from "../components/ToastProvider";
+import { LandingHero } from "../components/LandingHero";
+import { Header } from "../components/Header";
+import { useTranslations } from "next-intl";
 
 // Create a component using SearchContext
 const HomeContent: React.FC<{ isAppLoading: boolean }> = ({ isAppLoading }) => {
@@ -16,12 +17,14 @@ const HomeContent: React.FC<{ isAppLoading: boolean }> = ({ isAppLoading }) => {
     image?: string | null;
   } | null>(null);
   const { showToast } = useToast();
+  const tSearch = useTranslations("Search");
+  const tCommon = useTranslations("Common");
 
   // Handle search query - navigate to search page
   const handleSearch = (query: string) => {
     if (isAppLoading) return;
     if (!query.trim()) {
-      showToast("Please enter a keyword", "error");
+      showToast(tSearch("enterKeyword"), "error");
       return;
     }
     
@@ -37,10 +40,10 @@ const HomeContent: React.FC<{ isAppLoading: boolean }> = ({ isAppLoading }) => {
     try {
       await signOut();
       setUser(null);
-      showToast("Signed out successfully", "success");
+      showToast(tCommon("signedOut"), "success");
     } catch (error) {
       console.error("Sign out failed:", error);
-      showToast("Failed to sign out", "error");
+      showToast(tCommon("signOutFailed"), "error");
     }
   };
 
@@ -50,7 +53,7 @@ const HomeContent: React.FC<{ isAppLoading: boolean }> = ({ isAppLoading }) => {
         const { data } = await authClient.getSession();
         if (data?.user) {
           setUser(data.user);
-          showToast("Signed in successfully", "success");
+          showToast(tCommon("signedIn"), "success");
         } else {
           setUser(null);
         }

@@ -1,13 +1,15 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
 import { ProjectSettingsDialog } from "./ProjectSettings";
 import { APP_NAME } from "@/constants";
 import SearchBar from "./SearchBar";
 import { ModeToggle } from "./ModeToggle";
+import { LanguageSwitcher } from "./LanguageSwitcher";
+import { useTranslations } from "next-intl";
 
 interface HeaderProps {
   showSearchBar: boolean;
@@ -28,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   signOut,
   transparent = false,
 }) => {
+  const t = useTranslations('Header');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +73,8 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* 右侧 GitHub 链接和用户信息 */}
         <div className="shrink-0 flex items-center gap-1">
+          <LanguageSwitcher />
+
           <ProjectSettingsDialog />
           
           <ModeToggle />
@@ -79,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
               href="https://github.com/lexmin0412/gimme-icon-next"
               target="_blank"
               rel="noopener noreferrer"
-              title="GitHub Repository"
+              title={t('githubRepo')}
             >
               <Icon icon="lucide:github" className="h-[1.2rem] w-[1.2rem]" />
             </a>
@@ -120,14 +125,14 @@ export const Header: React.FC<HeaderProps> = ({
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
                   >
                     <Icon icon="lucide:log-out" className="w-4 h-4" />
-                    Sign out
+                    {t('signOut')}
                   </button>
                 </div>
               )}
             </div>
           ) : (
             <Button onClick={signIn} variant="ghost" size="sm">
-              Login
+              {t('login')}
             </Button>
           )}
           </div>

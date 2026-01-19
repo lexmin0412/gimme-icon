@@ -1,9 +1,10 @@
-'use client';
-import React, { useState, useRef, useEffect } from 'react';
-import type { FilterOptions } from '@/types/icon';
-import { iconSearchService } from '@/services/IconSearchService';
-import type { VectorStoreConfig, VectorStoreType } from '@/services/vector-store-service';
-import { useToast } from './ToastProvider';
+"use client";
+import React, { useState, useRef, useEffect } from "react";
+import type { FilterOptions } from "@/types/icon";
+import { iconSearchService } from "@/services/IconSearchService";
+import type { VectorStoreConfig, VectorStoreType } from "@/services/vector-store-service";
+import { useToast } from "./ToastProvider";
+import { useTranslations } from "next-intl";
 
 interface FilterPanelProps {
   filters: FilterOptions;
@@ -21,6 +22,8 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   onFilterChange 
 }) => {
   const { showToast } = useToast();
+  const tCommon = useTranslations("Common");
+  const tFilters = useTranslations("Filters");
   const [isTagsExpanded, setIsTagsExpanded] = useState(false);
   const [showExpandButton, setShowExpandButton] = useState(false);
   const tagsContainerRef = useRef<HTMLDivElement>(null);
@@ -114,8 +117,8 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       await iconSearchService.switchVectorStore(config);
       console.log('Vector store configuration applied successfully');
     } catch (error) {
-      console.error('Failed to apply vector store configuration:', error);
-      showToast('Failed to apply vector store configuration. Please check the console for details.', 'error');
+      console.error("Failed to apply vector store configuration:", error);
+      showToast(tCommon("vectorConfigFailed"), "error");
     } finally {
       setIsConfiguring(false);
     }
@@ -124,13 +127,15 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
   return (
     <div className="p-4 mb-6 bg-white border border-gray-200 rounded-lg shadow-sm dark:bg-gray-800 dark:border-gray-700">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Filters</h2>
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          {tFilters("title")}
+        </h2>
         {(filters.libraries.length > 0 || filters.categories.length > 0 || filters.tags.length > 0) && (
           <button
             onClick={clearFilters}
             className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
           >
-            Clear All
+            {tFilters("clearAll")}
           </button>
         )}
       </div>
@@ -138,7 +143,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
       <div className="space-y-6">
         {/* Libraries Filter */}
         <div>
-          <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Icon Libraries</h3>
+          <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            {tFilters("iconLibraries")}
+          </h3>
           <div className="flex flex-wrap gap-2">
             {availableFilters.libraries.map((library) => (
               <button
@@ -157,7 +164,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
         {/* Categories Filter */}
         <div>
-          <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Categories</h3>
+          <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            {tFilters("categories")}
+          </h3>
           <div className="flex flex-wrap gap-2">
             {availableFilters.categories.map((category) => (
               <button
@@ -176,7 +185,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
 
         {/* Tags Filter */}
         <div>
-          <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">Tags</h3>
+          <h3 className="mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            {tFilters("tags")}
+          </h3>
           <div
             ref={tagsContainerRef}
             className={`flex flex-wrap gap-2 overflow-y-auto transition-all duration-300 ${isTagsExpanded
@@ -205,7 +216,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
               onClick={toggleTagsExpanded}
               className="mt-2 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
             >
-              {isTagsExpanded ? '收起' : '展开'}
+              {isTagsExpanded ? tFilters("collapse") : tFilters("expand")}
             </button>
           )}
         </div>
@@ -213,12 +224,14 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
         {/* Vector Store Configuration */}
         <div className="border-t border-gray-200 pt-4 mt-4 dark:border-gray-700">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Vector Store</h3>
+            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {tFilters("vectorStore")}
+            </h3>
             <button
               onClick={toggleConfigExpanded}
               className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
             >
-              {isConfigExpanded ? '收起' : '配置'}
+              {isConfigExpanded ? tFilters("collapse") : tFilters("configure")}
             </button>
           </div>
           
@@ -227,7 +240,7 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
               {/* Vector Store Type */}
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
-                  Storage Type
+                  {tFilters("storageType")}
                 </label>
                 <div className="flex flex-wrap gap-2">
                   <button
@@ -236,8 +249,8 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                       ? 'text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
                       : 'text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600'}
                     `}
-                  >
-                    Memory
+                    >
+                    {tFilters("memory")}
                   </button>
                   <button
                     onClick={() => setVectorStoreType('local-chroma')}
@@ -245,8 +258,8 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                       ? 'text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
                       : 'text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600'}
                     `}
-                  >
-                    Local ChromaDB
+                    >
+                    {tFilters("localChroma")}
                   </button>
                   <button
                     onClick={() => setVectorStoreType('cloud-chroma')}
@@ -254,8 +267,8 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                       ? 'text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
                       : 'text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600'}
                     `}
-                  >
-                    Cloud ChromaDB
+                    >
+                    {tFilters("cloudChroma")}
                   </button>
                 </div>
               </div>
@@ -265,38 +278,38 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                 <div className="space-y-2">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
-                      API Key
+                      {tFilters("apiKey")}
                     </label>
                     <input
                       type="text"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                      placeholder="sk-..."
+                      placeholder={tFilters("apiKeyPlaceholder")}
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
-                      Tenant
+                      {tFilters("tenant")}
                     </label>
                     <input
                       type="text"
                       value={tenant}
                       onChange={(e) => setTenant(e.target.value)}
                       className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                      placeholder="default-tenant"
+                      placeholder={tFilters("tenantPlaceholder")}
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
-                      Database
+                      {tFilters("database")}
                     </label>
                     <input
                       type="text"
                       value={database}
                       onChange={(e) => setDatabase(e.target.value)}
                       className="w-full px-3 py-2 text-xs border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                      placeholder="default-database"
+                      placeholder={tFilters("databasePlaceholder")}
                     />
                   </div>
                 </div>
@@ -309,7 +322,9 @@ const FilterPanel: React.FC<FilterPanelProps> = ({
                   disabled={isConfiguring}
                   className="w-full px-3 py-2 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 transition-colors"
                 >
-                  {isConfiguring ? 'Applying...' : 'Apply Configuration'}
+                  {isConfiguring
+                    ? tFilters("applying")
+                    : tFilters("applyConfiguration")}
                 </button>
               </div>
             </div>
