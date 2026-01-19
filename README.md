@@ -1,129 +1,131 @@
 # Gimme Icon
 
-**基于自然语言的图标搜索引擎。**
+English | [简体中文](./README.zh-CN.md)
 
-告别记忆图标名称！用 "一个向下的箭头" 这样的自然语言描述，迅速找到你想要的图标。
+**Natural Language Based Icon Search Engine.**
+
+Say goodbye to memorizing icon names! Find the icon you want quickly with natural language descriptions like "a downward arrow".
 
 [![Vercel](https://img.shields.io/badge/vercel-live-green?style=flat&logo=vercel)](https://gimme-icon-next.vercel.app) [![License](https://img.shields.io/github/license/lexmin0412/gimme-icon?color=blue)](LICENSE)
 
-![搜索示例](./screenshots/search_result.png)
+![Search Example](./screenshots/search_result.png)
 
-## ✨ 为什么需要 Gimme Icon？
+## ✨ Why Gimme Icon?
 
-现有的图标平台（如 Iconify、Heroicons）要求你**知道图标的确切名称或关键词**：
+Existing icon platforms (such as Iconify, Heroicons) require you to **know the exact name or keyword** of the icon:
 
-- 想找“搜索”图标？你得输入 `search`。
-- 想找"加号"图标？你得先猜猜在图标库中的名字是 `add` 还是 `plus` 还是 ...
+- Want to find a "search" icon? You have to type `search`.
+- Want to find a "plus" icon? You have to guess if it's named `add` or `plus` or something else...
 
-但现实中，你在寻找一个图标时，第一时间冒出的形容词为：
-- “向下的箭头”
-- “代表删除的垃圾桶图标”
-- “带加号的房子”
+But in reality, when you are looking for an icon, the first words that come to mind are descriptions like:
+- "A downward arrow"
+- "A trash can representing delete"
+- "A house with a plus sign"
 
-**Gimme Icon 让你像说话一样搜索图标**——无需记忆命名规范，语义理解直达结果。
+**Gimme Icon lets you search for icons just like you speak**—no need to memorize naming conventions, semantic understanding leads you straight to the results.
 
-## 功能特性
+## Features
 
-- ✅ **自然语言搜索**：说人话，AI 理解意图并匹配图标
-- 🧩 **聚合多图标库**：图标数据源来自 Iconify，可扩展至全量图标集（200+ 库, 20W+ 图标）
-- 🎛️ **控制台管理**：提供可视化后台，支持批量选择图标进行向量化处理
-- 🛡️ **安全访问**：基于 GitHub OAuth 的登录认证，支持区分用户权限
-- 🚀 **现代技术栈**: 基于 Next.js 16 和 React 19 构建，支持服务端渲染
-- 🌐 **开源 & 免费**：MIT 许可，可自由分发
+- ✅ **Natural Language Search**: Speak naturally, AI understands your intent and matches icons.
+- 🧩 **Aggregates Multiple Icon Libraries**: Icon data source comes from Iconify, scalable to full icon sets (200+ libraries, 200k+ icons).
+- 🎛️ **Console Management**: Provides a visual backend to support batch selection of icons for vectorization.
+- 🛡️ **Secure Access**: Login authentication based on GitHub OAuth, supporting user permission differentiation.
+- 🚀 **Modern Tech Stack**: Built on Next.js 16 and React 19, supporting Server-Side Rendering (SSR).
+- 🌐 **Open Source & Free**: MIT License, free to distribute.
 
-## 🚀 快速体验
+## 🚀 Quick Start
 
-1. 访问在线 Demo 👉 [https://gimme-icon-next.vercel.app](https://gimme-icon-next.vercel.app)
-2. 尝试搜索：
-   - “向下的箭头”
-   - “代表删除的垃圾桶图标”
-   - “带加号的房子”
+1. Visit Online Demo 👉 [https://gimme-icon-next.vercel.app](https://gimme-icon-next.vercel.app)
+2. Try searching:
+   - "A downward arrow"
+   - "A trash can representing delete"
+   - "A house with a plus sign"
 
-## 技术栈
+## Tech Stack
 
-- **前端框架**: Next.js 16（App Router） + React 19
-- **UI 组件**: Shadcn UI + Tailwind CSS 4
-- **认证方案**: Better-Auth (GitHub OAuth)
-- **向量检索**:
-  - 模型: `@huggingface/transformers` (all-MiniLM-L6-v2)
-  - 数据库: ChromaDB
-- **构建工具**: Turbopack
-- **类型系统**: TypeScript 5
-- **包管理器**: pnpm 10
+- **Frontend Framework**: Next.js 16 (App Router) + React 19
+- **UI Components**: Shadcn UI + Tailwind CSS 4
+- **Authentication**: Better-Auth (GitHub OAuth)
+- **Vector Search**:
+  - Model: `@huggingface/transformers` (all-MiniLM-L6-v2)
+  - Database: ChromaDB
+- **Build Tool**: Turbopack
+- **Type System**: TypeScript 5
+- **Package Manager**: pnpm 10
 
-## 快速开始
+## Getting Started
 
-### Clone 仓库
+### Clone Repository
 
 ```bash
 git clone https://github.com/lexmin0412/gimme-icon.git
 cd gimme-icon
 ```
 
-### 环境要求
+### Requirements
 
 - Node.js >= 20
 - pnpm >= 10
 
-### 安装依赖
+### Install Dependencies
 
 ```bash
 pnpm install
 ```
 
-### 环境变量配置
+### Environment Configuration
 
-复制 `.env.example` 到 `.env.local`：
+Copy `.env.example` to `.env.local`:
 
 ```bash
 cp .env.example .env.local
 ```
 
-然后编辑 `.env.local` 填入你的配置信息（GitHub OAuth、Chroma Cloud、邮箱白名单等）。
+Then edit `.env.local` to fill in your configuration (GitHub OAuth, Chroma Cloud, email whitelist, etc.).
 
-### 启动开发服务器
+### Start Development Server
 
 ```bash
 pnpm dev
 ```
 
-应用将在 `http://localhost:9588` 启动（端口可在 `package.json` 中修改）。
+The application will start at `http://localhost:9588` (port can be modified in `package.json`).
 
-### 构建生产版本
+### Build for Production
 
 ```bash
 pnpm build
 pnpm start
 ```
 
-## 项目结构
+## Project Structure
 
 ```
-├── app/                  # Next.js App Router 应用目录
-│   ├── api/              # API 路由 (auth, chroma, etc.)
-│   ├── console/          # 控制台页面 (需权限)
-│   ├── components/       # 通用组件
-│   └── page.tsx          # 首页
-├── components/           # UI 组件库 (shadcn/ui)
-├── constants/            # 常量定义
-├── context/              # React 上下文
-├── libs/                 # 第三方库初始化 (auth, chroma)
-├── public/               # 静态资源
-├── services/             # 业务逻辑服务
-│   ├── embedding.ts      # 向量化服务
-│   └── icons.ts          # 图标数据服务
-└── types/                # TypeScript 类型定义
+├── app/                  # Next.js App Router application directory
+│   ├── api/              # API routes (auth, chroma, etc.)
+│   ├── console/          # Console pages (requires permission)
+│   ├── components/       # Shared components
+│   └── page.tsx          # Home page
+├── components/           # UI Component Library (shadcn/ui)
+├── constants/            # Constant definitions
+├── context/              # React Context
+├── libs/                 # Third-party library initialization (auth, chroma)
+├── public/               # Static assets
+├── services/             # Business logic services
+│   ├── embedding.ts      # Vectorization service
+│   └── icons.ts          # Icon data service
+└── types/                # TypeScript type definitions
 ```
 
-## 许可证
+## License
 
 MIT License
 
-## 鸣谢
+## Acknowledgements
 
-在开发和前期规划过程中，参考了以下项目进行设计：
+During the development and planning process, the following projects were referenced for design:
 
-- [Iconify](https://iconify.design) 提供了海量图标库资源和 API
-- [Lucide](https://lucide.dev/) 提供了界面设计灵感，参考了相关交互
+- [Iconify](https://iconify.design) provided massive icon library resources and APIs.
+- [Lucide](https://lucide.dev/) provided UI design inspiration and interaction references.
 - [Simple Icons](https://github.com/simple-icons/simple-icons)
 - [icones](https://github.com/antfu/icones)
