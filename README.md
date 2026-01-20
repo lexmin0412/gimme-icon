@@ -1,97 +1,120 @@
-# Gimme Icon
+<div align="center">
+  <h1 align="center">Gimme Icon</h1>
 
-English | [简体中文](./README.zh-CN.md)
+  <p align="center">
+    <strong>Semantic Icon Search Engine</strong>
+  </p>
 
-**Natural Language Based Icon Search Engine.**
+  <p align="center">
+    Built with Next.js 16, React 19, Transformers.js, and ChromaDB.
+  </p>
 
-Say goodbye to memorizing icon names! Find the icon you want quickly with natural language descriptions like "a downward arrow".
+  <p align="center">
+    <a href="https://gimme-icon-next.vercel.app"><strong>Online Demo</strong></a> ·
+    <a href="#features"><strong>Features</strong></a> ·
+    <a href="#tech-stack"><strong>Tech Stack</strong></a> ·
+    <a href="#getting-started"><strong>Getting Started</strong></a> ·
+    <a href="#deploy-your-own"><strong>Deploy Your Own</strong></a>
+  </p>
 
-[![Vercel](https://img.shields.io/badge/vercel-live-green?style=flat&logo=vercel)](https://gimme-icon-next.vercel.app) [![License](https://img.shields.io/github/license/lexmin0412/gimme-icon?color=blue)](LICENSE)
+  <br/>
+
+  <p align="center">
+    English | <a href="./README.zh-CN.md">简体中文</a>
+  </p>
+
+  [![Vercel](https://img.shields.io/badge/vercel-live-green?style=flat&logo=vercel)](https://gimme-icon-next.vercel.app)
+  [![License](https://img.shields.io/github/license/lexmin0412/gimme-icon?color=blue)](LICENSE)
+</div>
+
+<br/>
 
 ![Search Example](./screenshots/search_result.png)
 
 ## ✨ Why Gimme Icon?
 
-Existing icon platforms (such as Iconify, Heroicons) require you to **know the exact name or keyword** of the icon:
+Traditional icon libraries (Iconify, Heroicons) force you to **memorize keywords**.
 
-- Want to find a "search" icon? You have to type `search`.
-- Want to find a "plus" icon? You have to guess if it's named `add` or `plus` or something else...
+- Want a "search" icon? You type `search`.
+- Want a "plus" icon? You guess: `add`? `plus`? `create`?
 
-But in reality, when you are looking for an icon, the first words that come to mind are descriptions like:
+**Gimme Icon** changes the game. Describe what you see in your mind:
 - "A downward arrow"
 - "A trash can representing delete"
 - "A house with a plus sign"
 
-**Gimme Icon lets you search for icons just like you speak**—no need to memorize naming conventions, semantic understanding leads you straight to the results.
+Our AI understands your intent, not just your keywords.
 
 ## Features
 
-- ✅ **Natural Language Search**: Speak naturally, AI understands your intent and matches icons.
-- 🧩 **Aggregates Multiple Icon Libraries**: Icon data source comes from Iconify, scalable to full icon sets (200+ libraries, 200k+ icons).
-- 🎛️ **Console Management**: Provides a visual backend to support batch selection of icons for vectorization.
-- 🛡️ **Secure Access**: Login authentication based on GitHub OAuth, supporting user permission differentiation.
-- 🚀 **Modern Tech Stack**: Built on Next.js 16 and React 19, supporting Server-Side Rendering (SSR).
-- 🌐 **Open Source & Free**: MIT License, free to distribute.
-
-## 🚀 Quick Start
-
-1. Visit Online Demo 👉 [https://gimme-icon-next.vercel.app](https://gimme-icon-next.vercel.app)
-2. Try searching:
-   - "A downward arrow"
-   - "A trash can representing delete"
-   - "A house with a plus sign"
+- **Semantic Search**: Powered by `@huggingface/transformers` (paraphrase-multilingual-MiniLM-L12-v2) running locally or on the edge.
+- **Vector Search**:
+  - **ChromaDB**: Switch to a robust vector database for production scale.
+- **Massive Icon Library**: Aggregates 200k+ icons from 200+ collections via Iconify.
+- **Modern UI/UX**: Built with Shadcn UI and Tailwind CSS 4 for a beautiful, responsive experience.
+- **Authentication**: Secure GitHub OAuth integration using Better-Auth.
+- **Management Console**: Visual backend for batch vectorization and management.
 
 ## Tech Stack
 
-- **Frontend Framework**: Next.js 16 (App Router) + React 19
-- **UI Components**: Shadcn UI + Tailwind CSS 4
-- **Authentication**: Better-Auth (GitHub OAuth)
-- **Vector Search**:
-  - Model: `@huggingface/transformers` (all-MiniLM-L6-v2)
-  - Database: ChromaDB
-- **Build Tool**: Turbopack
-- **Type System**: TypeScript 5
-- **Package Manager**: pnpm 10
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript 5](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) & [Shadcn UI](https://ui.shadcn.com/)
+- **AI & Vectors**:
+  - [Transformers.js](https://huggingface.co/docs/transformers.js) for embedding generation
+  - [ChromaDB](https://www.trychroma.com/) for vector storage
+- **Auth**: [Better-Auth](https://www.better-auth.com/)
+- **Package Manager**: [pnpm](https://pnpm.io/)
+
+## Deploy Your Own
+
+You can deploy your own instance of Gimme Icon to Vercel with one click:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flexmin0412%2Fgimme-icon&env=BETTER_AUTH_SECRET,BETTER_AUTH_URL,GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET)
 
 ## Getting Started
 
-### Clone Repository
-
-```bash
-git clone https://github.com/lexmin0412/gimme-icon.git
-cd gimme-icon
-```
-
-### Requirements
+### Prerequisites
 
 - Node.js >= 20
 - pnpm >= 10
 
-### Install Dependencies
+### Installation
 
-```bash
-pnpm install
-```
+1. **Clone the repository**
 
-### Environment Configuration
+   ```bash
+   git clone https://github.com/lexmin0412/gimme-icon.git
+   cd gimme-icon
+   ```
 
-Copy `.env.example` to `.env.local`:
+2. **Install dependencies**
 
-```bash
-cp .env.example .env.local
-```
+   ```bash
+   pnpm install
+   ```
 
-Then edit `.env.local` to fill in your configuration (GitHub OAuth, Chroma Cloud, email whitelist, etc.).
+3. **Configure Environment**
 
-### Start Development Server
+   Copy the example environment file:
 
-```bash
-pnpm dev
-```
+   ```bash
+   cp .env.example .env.local
+   ```
 
-The application will start at `http://localhost:9588` (port can be modified in `package.json`).
+   Update `.env.local` with your credentials (required for Auth and optional ChromaDB).
 
-### Build for Production
+4. **Run Development Server**
+
+   ```bash
+   pnpm dev
+   ```
+
+   Visit `http://localhost:9588`.
+
+   > **Note**: On the first launch, the app will automatically download the embedding model and generate vectors for the default icon set.
+
+### Building for Production
 
 ```bash
 pnpm build
@@ -123,9 +146,6 @@ MIT License
 
 ## Acknowledgements
 
-During the development and planning process, the following projects were referenced for design:
-
-- [Iconify](https://iconify.design) provided massive icon library resources and APIs.
-- [Lucide](https://lucide.dev/) provided UI design inspiration and interaction references.
-- [Simple Icons](https://github.com/simple-icons/simple-icons)
-- [icones](https://github.com/antfu/icones)
+- [Iconify](https://iconify.design) - The universal icon framework.
+- [Lucide](https://lucide.dev/) - Beautiful & consistent icons.
+- [Simple Icons](https://simpleicons.org/) - Free SVG icons for popular brands.

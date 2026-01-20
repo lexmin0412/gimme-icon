@@ -1,95 +1,118 @@
-# Gimme Icon
+<div align="center">
+  <h1 align="center">Gimme Icon</h1>
 
-[English](./README.md) | 简体中文
+  <p align="center">
+    <strong>语义化图标搜索引擎</strong>
+  </p>
 
-**基于自然语言的图标搜索引擎。**
+  <p align="center">
+    基于 Next.js 16, React 19, Transformers.js 和 ChromaDB 构建。
+  </p>
 
-告别记忆图标名称！用 "一个向下的箭头" 这样的自然语言描述，迅速找到你想要的图标。
+  <p align="center">
+    <a href="https://gimme-icon-next.vercel.app"><strong>在线演示</strong></a> ·
+    <a href="#功能特性"><strong>功能特性</strong></a> ·
+    <a href="#技术栈"><strong>技术栈</strong></a> ·
+    <a href="#快速开始"><strong>快速开始</strong></a> ·
+    <a href="#一键部署"><strong>一键部署</strong></a>
+  </p>
 
-[![Vercel](https://img.shields.io/badge/vercel-live-green?style=flat&logo=vercel)](https://gimme-icon-next.vercel.app) [![License](https://img.shields.io/github/license/lexmin0412/gimme-icon?color=blue)](LICENSE)
+  <br/>
 
-![搜索示例](./screenshots/search_result.png)
+  <p align="center">
+    <a href="./README.md">English</a> | 简体中文
+  </p>
 
-## ✨ 为什么需要 Gimme Icon？
+  [![Vercel](https://img.shields.io/badge/vercel-live-green?style=flat&logo=vercel)](https://gimme-icon-next.vercel.app)
+  [![License](https://img.shields.io/github/license/lexmin0412/gimme-icon?color=blue)](LICENSE)
+</div>
 
-现有的图标平台（如 Iconify、Heroicons）要求你**知道图标的确切名称或关键词**：
+<br/>
 
-- 想找“搜索”图标？你得输入 `search`。
-- 想找"加号"图标？你得先猜猜在图标库中的名字是 `add` 还是 `plus` 还是 ...
+![Search Example](./screenshots/search_result.png)
 
-但现实中，你在寻找一个图标时，第一时间冒出的形容词为：
-- “向下的箭头”
-- “代表删除的垃圾桶图标”
-- “带加号的房子”
+## ✨ 为什么选择 Gimme Icon？
 
-**Gimme Icon 让你像说话一样搜索图标**——无需记忆命名规范，语义理解直达结果。
+传统的图标库（如 Iconify, Heroicons）迫使你**死记硬背关键词**。
+
+- 想找"搜索"图标？你得输入 `search`。
+- 想找"加号"图标？你得猜是叫 `add` 还是 `plus` 还是 `create`？
+
+**Gimme Icon** 改变了这一切。直接描述你脑海中的画面：
+- "一个向下的箭头"
+- "代表删除的垃圾桶图标"
+- "带加号的房子"
+
+我们的 AI 理解你的意图，而不仅仅是匹配关键词。
 
 ## 功能特性
 
-- ✅ **自然语言搜索**：说人话，AI 理解意图并匹配图标
-- 🧩 **聚合多图标库**：图标数据源来自 Iconify，可扩展至全量图标集（200+ 库, 20W+ 图标）
-- 🎛️ **控制台管理**：提供可视化后台，支持批量选择图标进行向量化处理
-- 🛡️ **安全访问**：基于 GitHub OAuth 的登录认证，支持区分用户权限
-- 🚀 **现代技术栈**: 基于 Next.js 16 和 React 19 构建，支持服务端渲染
-- 🌐 **开源 & 免费**：MIT 许可，可自由分发
-
-## 🚀 快速体验
-
-1. 访问在线 Demo 👉 [https://gimme-icon-next.vercel.app](https://gimme-icon-next.vercel.app)
-2. 尝试搜索：
-   - “向下的箭头”
-   - “代表删除的垃圾桶图标”
-   - “带加号的房子”
+- **语义化检索**：由 `@huggingface/transformers` (paraphrase-multilingual-MiniLM-L12-v2) 驱动，支持本地或边缘计算运行。
+- **向量检索**：
+  - **ChromaDB**：可切换至专业的向量数据库，支持生产级扩展。
+- **海量图标库**：聚合了来自 Iconify 的 200+ 图标集，共计 20W+ 图标。
+- **现代 UI/UX**：基于 Shadcn UI 和 Tailwind CSS 4 构建，提供美观、响应式的用户体验。
+- **安全认证**：集成了 GitHub OAuth 安全认证 (Better-Auth)。
+- **管理控制台**：可视化的后台管理系统，支持批量向量化处理。
 
 ## 技术栈
 
-- **前端框架**: Next.js 16（App Router） + React 19
-- **UI 组件**: Shadcn UI + Tailwind CSS 4
-- **认证方案**: Better-Auth (GitHub OAuth)
-- **向量检索**:
-  - 模型: `@huggingface/transformers` (all-MiniLM-L6-v2)
-  - 数据库: ChromaDB
-- **构建工具**: Turbopack
-- **类型系统**: TypeScript 5
-- **包管理器**: pnpm 10
+- **框架**: [Next.js 16](https://nextjs.org/) (App Router)
+- **语言**: [TypeScript 5](https://www.typescriptlang.org/)
+- **样式**: [Tailwind CSS 4](https://tailwindcss.com/) & [Shadcn UI](https://ui.shadcn.com/)
+- **AI & 向量**:
+  - [Transformers.js](https://huggingface.co/docs/transformers.js) 用于生成 Embeddings
+  - [ChromaDB](https://www.trychroma.com/) 用于向量存储
+- **认证**: [Better-Auth](https://www.better-auth.com/)
+- **包管理**: [pnpm](https://pnpm.io/)
+
+## 一键部署
+
+你可以一键将 Gimme Icon 部署到 Vercel：
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Flexmin0412%2Fgimme-icon&env=BETTER_AUTH_SECRET,BETTER_AUTH_URL,GITHUB_CLIENT_ID,GITHUB_CLIENT_SECRET)
 
 ## 快速开始
-
-### Clone 仓库
-
-```bash
-git clone https://github.com/lexmin0412/gimme-icon.git
-cd gimme-icon
-```
 
 ### 环境要求
 
 - Node.js >= 20
 - pnpm >= 10
 
-### 安装依赖
+### 安装步骤
 
-```bash
-pnpm install
-```
+1. **Clone 仓库**
 
-### 环境变量配置
+   ```bash
+   git clone https://github.com/lexmin0412/gimme-icon.git
+   cd gimme-icon
+   ```
 
-复制 `.env.example` 到 `.env.local`：
+2. **安装依赖**
 
-```bash
-cp .env.example .env.local
-```
+   ```bash
+   pnpm install
+   ```
 
-然后编辑 `.env.local` 填入你的配置信息（GitHub OAuth、Chroma Cloud、邮箱白名单等）。
+3. **配置环境变量**
 
-### 启动开发服务器
+   复制示例配置文件：
 
-```bash
-pnpm dev
-```
+   ```bash
+   cp .env.example .env.local
+   ```
 
-应用将在 `http://localhost:9588` 启动（端口可在 `package.json` 中修改）。
+   编辑 `.env.local` 填入你的配置信息（认证服务必须配置，ChromaDB 可选）。
+
+4. **启动开发服务器**
+
+   ```bash
+   pnpm dev
+   ```
+
+   访问 `http://localhost:9588`。
+
+   > **注意**：首次启动时，应用会自动下载 Embedding 模型并为默认图标集生成向量索引。
 
 ### 构建生产版本
 
@@ -123,9 +146,6 @@ MIT License
 
 ## 鸣谢
 
-在开发和前期规划过程中，参考了以下项目进行设计：
-
-- [Iconify](https://iconify.design) 提供了海量图标库资源和 API
-- [Lucide](https://lucide.dev/) 提供了界面设计灵感，参考了相关交互
-- [Simple Icons](https://github.com/simple-icons/simple-icons)
-- [icones](https://github.com/antfu/icones)
+- [Iconify](https://iconify.design) - 通用图标框架。
+- [Lucide](https://lucide.dev/) - 美观一致的图标库。
+- [Simple Icons](https://simpleicons.org/) - 流行品牌的免费 SVG 图标。

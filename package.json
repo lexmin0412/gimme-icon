@@ -2,6 +2,7 @@
   "name": "gimme-icon-next",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "dev": "PORT=9588 next dev",
     "build": "next build",
