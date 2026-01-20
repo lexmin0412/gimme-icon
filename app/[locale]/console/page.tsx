@@ -56,6 +56,10 @@ const ConsolePage: React.FC = () => {
   );
   const [selectedIcon, setSelectedIcon] = useState<Icon | null>(null);
   const [isBatchEmbedding, setIsBatchEmbedding] = useState<boolean>(false);
+  const [embeddingProgress, setEmbeddingProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
 
   // Tab state
   const [activeTab, setActiveTab] = useState<string>("search");
@@ -207,8 +211,11 @@ const ConsolePage: React.FC = () => {
     if (selectedIconIds.size === 0) return;
     try {
       setIsBatchEmbedding(true);
+      // 1. 初始化进度
+      setEmbeddingProgress({ current: 0, total: selectedIconIds.size });
       await embeddingService.initialize();
       const items: { icon: Icon; embedding: number[] }[] = [];
+      let processedCount = 0; // 2. 添加计数器
       for (const r of iconResults) {
         if (!selectedIconIds.has(r.icon.id)) continue;
         const icon = r.icon;
@@ -219,6 +226,12 @@ const ConsolePage: React.FC = () => {
           const embedding = await embeddingService.generateEmbedding(document);
           items.push({ icon, embedding });
         } catch {}
+        // 3. 实时更新进度
+        processedCount++;
+        setEmbeddingProgress({
+          current: processedCount,
+          total: selectedIconIds.size,
+        });
       }
       if (items.length > 0) {
         const response = await fetch("/api/refresh-embedding", {
@@ -234,6 +247,7 @@ const ConsolePage: React.FC = () => {
       setSelectedIconIds(new Set());
     } finally {
       setIsBatchEmbedding(false);
+      setEmbeddingProgress(null);
     }
   };
 
@@ -467,7 +481,12 @@ const ConsolePage: React.FC = () => {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 {isBatchEmbedding
-                  ? tConsole("embeddingInProgress")
+                  ? embeddingProgress
+                    ? tConsole("embeddingWithProgress", {
+                        current: embeddingProgress.current,
+                        total: embeddingProgress.total,
+                      })
+                    : tConsole("embeddingInProgress")
                   : tConsole("startEmbedding")}
               </Button>
             </div>
