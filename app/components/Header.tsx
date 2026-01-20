@@ -32,7 +32,31 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const t = useTranslations('Header');
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [hasConsoleAccess, setHasConsoleAccess] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Check console access
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (!user) {
+        setHasConsoleAccess(false);
+        return;
+      }
+      try {
+        const res = await fetch("/api/console-auth");
+        if (res.ok) {
+          const data = await res.json();
+          setHasConsoleAccess(data.allowed);
+        } else {
+          setHasConsoleAccess(false);
+        }
+      } catch (error) {
+        console.error("Failed to check console access:", error);
+        setHasConsoleAccess(false);
+      }
+    };
+    checkAccess();
+  }, [user]);
 
   // 点击外部关闭菜单
   useEffect(() => {
@@ -75,9 +99,9 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="shrink-0 flex items-center gap-1">
           <LanguageSwitcher />
 
-          <ProjectSettingsDialog />
-          
           <ModeToggle />
+
+          <ProjectSettingsDialog />
           
           <Button variant="ghost" size="icon" asChild>
             <a
@@ -89,6 +113,14 @@ export const Header: React.FC<HeaderProps> = ({
               <Icon icon="lucide:github" className="h-[1.2rem] w-[1.2rem]" />
             </a>
           </Button>
+
+          {hasConsoleAccess && (
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/console" title={t('console') || "Console"}>
+                <Icon icon="lucide:terminal" className="h-[1.2rem] w-[1.2rem]" />
+              </Link>
+            </Button>
+          )}
 
           <div className="ml-1">
             {user ? (
