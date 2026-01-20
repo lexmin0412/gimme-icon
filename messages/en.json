@@ -3,7 +3,8 @@
     "login": "Login",
     "signOut": "Sign out",
     "githubRepo": "GitHub Repository",
-    "projectSettings": "Project Settings"
+    "projectSettings": "Project Settings",
+    "console": "Console"
   },
   "Landing": {
     "title": "GIMME ICON!",
@@ -150,6 +151,7 @@
     "deselectAll": "Deselect All",
     "selectAll": "Select All",
     "embeddingInProgress": "Embedding...",
+    "embeddingWithProgress": "Embedding ({current}/{total})...",
     "startEmbedding": "Start Embedding",
     "defaultLibrary": "library"
   }

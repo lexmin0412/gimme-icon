@@ -3,7 +3,8 @@
     "login": "登录",
     "signOut": "退出登录",
     "githubRepo": "GitHub 仓库",
-    "projectSettings": "项目设置"
+    "projectSettings": "项目设置",
+    "console": "控制台"
   },
   "Landing": {
     "title": "GIMME ICON!",
@@ -150,6 +151,7 @@
     "deselectAll": "取消全选",
     "selectAll": "全选",
     "embeddingInProgress": "正在 Embedding...",
+    "embeddingWithProgress": "正在 Embedding ({current}/{total})...",
     "startEmbedding": "开始 Embedding",
     "defaultLibrary": "库"
   }
