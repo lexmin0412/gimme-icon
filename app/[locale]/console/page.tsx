@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import Image from "next/image";
 import { Icon as IconifyIcon } from "@iconify/react";
 import { signIn } from "@/libs/auth-client";
+import { iconifySearch, iconifyToInternalIcon } from "@/libs/iconify";
 import { useTranslations } from "next-intl";
 
 type LibraryInfo = {
@@ -156,27 +157,15 @@ const ConsolePage: React.FC = () => {
         });
         setSearchResults(results);
       } else {
-        const api = `https://api.iconify.design/search?query=${encodeURIComponent(
-          q
-        )}&prefix=${activeLibrary}&limit=${INITIAL_LOAD_COUNT}&pretty=1`;
-        const resp = await fetch(api);
-        const data = await resp.json();
-        const icons: string[] = Array.isArray(data.icons) ? data.icons : [];
-        const filtered = icons.filter((i) => i.startsWith(`${activeLibrary}:`));
-        const mapped: SearchResult[] = filtered.map((full) => {
-          const [prefix, name] = full.split(":");
-          const tags = name.includes("-") ? name.split("-") : [name];
-          const icon: Icon = {
-            id: `${prefix}__${name}`,
-            name,
-            svg: "",
-            library: prefix,
-            category: "",
-            tags,
-            synonyms: [],
-          };
-          return { icon, score: 0 };
+        const { icons } = await iconifySearch({
+          query: q,
+          prefix: activeLibrary,
+          limit: INITIAL_LOAD_COUNT,
         });
+        const mapped: SearchResult[] = icons.map(({ prefix, name }) => ({
+          icon: iconifyToInternalIcon(prefix, name),
+          score: 0,
+        }));
         setSearchResults(mapped);
       }
     } finally {

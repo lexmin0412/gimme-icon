@@ -1,21 +1,10 @@
 /**
  * 获取所有可用的图标库列表
  */
+import { iconifyGetCollections, iconifyGetCollectionIcons } from "@/libs/iconify";
+
 export const getIconLibraries = async () => {
-  const response = await fetch('https://api.iconify.design/collections');
-  const data = await response.json() as Record<string, {
-    name: string;
-    total: number;
-    author: { name: string };
-    license: { title: string };
-  }>;
-  return Object.entries(data).map(([prefix, info]) => ({
-    prefix,
-    name: info.name,
-    total: info.total,
-    author: info.author.name,
-    license: info.license.title
-  }));
+  return await iconifyGetCollections();
 };
 
 /**
@@ -28,19 +17,7 @@ export const loadIcons = async (libNames: string[]) => {
   // 并行加载所有图标库
   const iconArrays = await Promise.all(
     libraries.map(async (libName) => {
-      const icons = await fetch(
-        `https://api.iconify.design/collection?prefix=${libName}&pretty=1`
-      ).then((res) => res.json());
-
-      const categoriedIcons = Object.keys(icons.categories || {}).reduce(
-        (acc, categoryKey) => {
-          acc.push(...(icons.categories[categoryKey] as string[]));
-          return acc;
-        },
-        [] as string[]
-      );
-
-      const iconList = [...icons.uncategorized || [], ...categoriedIcons];
+      const { iconNames: iconList } = await iconifyGetCollectionIcons(libName);
 
       return iconList.map((key) => {
         return {

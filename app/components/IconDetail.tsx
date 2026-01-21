@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import { useLocalProjectPath } from "./ProjectSettings";
 import { copy2Clipboard, copyImage2Clipboard } from "@/libs/utils";
+import { iconifyGetCss, iconifyGetSvg } from "@/libs/iconify";
 import { useTranslations } from "next-intl";
 
 type Framework = "React" | "Vue" | "Svelte" | "Astro" | "Solid" | "HTML/CSS";
@@ -199,15 +200,11 @@ export default ${componentName};
 
 
   const fetchSvgContent = async () => {
-    return await fetch(
-      `https://api.iconify.design/${icon.library}/${icon.name}.svg`
-    ).then((res) => res.text());
+    return await iconifyGetSvg(icon.library, icon.name);
   };
 
   const fetchCssContent = async () => {
-    return await fetch(
-      `https://api.iconify.design/${icon.library}.css?icons=${icon.name}`
-    ).then((res) => res.text());
+    return await iconifyGetCss(icon.library, [icon.name]);
   };
 
   const fetchReactComponentCode = async () => {
