@@ -1,5 +1,7 @@
 import { z } from 'zod';
 import { createMcpHandler } from 'mcp-handler';
+
+export const dynamic = 'force-dynamic';
  
 const handler = createMcpHandler(
   (server) => {
