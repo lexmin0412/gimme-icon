@@ -29,7 +29,7 @@
 
 <br/>
 
-![Search Example](./screenshots/search_result.png)
+![Home](./screenshots/home.png)
 
 ## ✨ Why Gimme Icon?
 
@@ -43,7 +43,9 @@ Traditional icon libraries (Iconify, Heroicons) force you to **memorize keywords
 - "A trash can representing delete"
 - "A house with a plus sign"
 
-Our AI understands your intent, not just your keywords.
+Understands your intent, not just your keywords.
+
+![Search Result](./screenshots/search_result_en.png)
 
 ## Features
 

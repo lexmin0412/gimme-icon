@@ -29,7 +29,7 @@
 
 <br/>
 
-![Search Example](./screenshots/search_result.png)
+![首页](./screenshots/home_zh.png)
 
 ## ✨ 为什么选择 Gimme Icon？
 
@@ -43,7 +43,9 @@
 - "代表删除的垃圾桶图标"
 - "带加号的房子"
 
-我们的 AI 理解你的意图，而不仅仅是匹配关键词。
+理解你的意图，而不仅仅是匹配关键词。
+
+![搜索结果](./screenshots/search_result_zh.png)
 
 ## 功能特性
 
