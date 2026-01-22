@@ -1,10 +1,21 @@
-import { CloudClient, ChromaClient as DClient } from "chromadb";
+import { CloudClient, Collection, ChromaClient as DClient } from "chromadb";
+// import {
+//   ChromaCloudQwenEmbeddingFunction,
+//   ChromaCloudQwenEmbeddingModel,
+//   ChromaCloudQwenEmbeddingTask,
+// } from "@chroma-core/chroma-cloud-qwen";
+
+// Initialize the embedder
+// const embedder = new ChromaCloudQwenEmbeddingFunction({
+//   model: ChromaCloudQwenEmbeddingModel.QWEN3_EMBEDDING_0p6B,
+//   task: ChromaCloudQwenEmbeddingTask.CODE_TO_CODE,
+//   apiKeyEnvVar: process.env.CHROMA_API_KEY,
+// });
 
 // 全局 Chroma 客户端实例
 let globalChromaClient: CloudClient | null = null;
 type Primitive = string | number | boolean;
 export type Metadata = Record<string, Primitive>;
-type WhereFilter = Record<string, unknown>;
 
 export interface GetResult {
   ids: string[];
@@ -21,12 +32,12 @@ export interface QueryResult {
 export interface ChromaCollectionAPI {
   upsert(options: { ids: string[]; embeddings: number[][]; metadatas?: Metadata[] }): Promise<void>;
   get(options: { ids?: string[] }): Promise<GetResult>;
-  query(options: { queryEmbeddings?: number[][]; nResults?: number; ids?: string[]; where?: WhereFilter }): Promise<QueryResult>;
+  query: Collection['query']
   delete(options: { ids?: string[] }): Promise<void>;
   count(): Promise<number>;
 }
 
-const globalChromaCollections = new Map<string, ChromaCollectionAPI>();
+const globalChromaCollections = new Map<string, Collection>();
 
 // 从环境变量获取 Chroma 配置
 function getChromaEnvConfig() {
@@ -82,7 +93,7 @@ export async function getGlobalChromaClient(isCloud: boolean = true): Promise<Cl
 }
 
 // 获取或创建全局集合
-export async function getGlobalChromaCollection(collectionName?: string, metadata?: Metadata): Promise<ChromaCollectionAPI> {
+export async function getGlobalChromaCollection(collectionName?: string, metadata?: Metadata): Promise<Collection> {
   const name = collectionName ?? getChromaCollectionName();
   if (!globalChromaCollections.has(name)) {
     const client = await getGlobalChromaClient();
@@ -93,6 +104,7 @@ export async function getGlobalChromaCollection(collectionName?: string, metadat
         createdAt: new Date().toISOString(),
         ...metadata,
       },
+      // embeddingFunction: embedder,
     });
     
     globalChromaCollections.set(name, collection);
@@ -118,7 +130,7 @@ export class ChromaCollection {
     this.metadata = metadata;
   }
 
-  async getInstance(): Promise<ChromaCollectionAPI> {
+  async getInstance(): Promise<Collection> {
     return await getGlobalChromaCollection(this.name, this.metadata);
   }
 
@@ -132,7 +144,7 @@ export class ChromaCollection {
     return await collection.get(options);
   }
 
-  async query(options: { queryEmbeddings?: number[][]; nResults?: number; ids?: string[]; where?: WhereFilter }): Promise<QueryResult> {
+  query: Collection['query'] = async (options) => {
     const collection = await this.getInstance();
     return await collection.query(options);
   }

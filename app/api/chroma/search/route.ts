@@ -5,24 +5,27 @@ import { ChromaCollection } from '@/libs/chroma';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { queryEmbedding, limit } = body;
+    const { queryEmbedding, queryTexts, limit, filters } = body;
     
-    if (!queryEmbedding || !Array.isArray(queryEmbedding)) {
-      return NextResponse.json(
-        { success: false, error: 'Missing or invalid queryEmbedding parameter' },
-        { status: 400 }
-      );
-    }
+    // if (!queryEmbedding || !Array.isArray(queryEmbedding)) {
+    //   return NextResponse.json(
+    //     { success: false, error: 'Missing or invalid queryEmbedding parameter' },
+    //     { status: 400 }
+    //   );
+    // }
     
     // 使用全局集合实例
     const collection = new ChromaCollection();
+
+    const queryParams = {
+      queryEmbeddings: queryEmbedding ? [queryEmbedding] : undefined,
+      queryTexts: queryTexts ? queryTexts : undefined,
+      nResults: limit || 20,
+      where: Object.entries(filters)?.length ? filters : undefined,
+    };
     
     // 执行向量搜索
-    const searchResults = await collection.query({
-      queryEmbeddings: [queryEmbedding],
-      nResults: limit || 20,
-      // where: filters,
-    });
+    const searchResults = await collection.query(queryParams);
     
     // 转换结果格式
     let results: Array<{
