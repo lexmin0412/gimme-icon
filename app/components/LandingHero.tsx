@@ -165,7 +165,7 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
         {/* Subtitle */}
         <motion.p
           variants={itemVariants}
-          className="text-lg md:text-2xl text-muted-foreground text-center max-w-xl mb-12 font-medium tracking-tight leading-relaxed"
+          className="text-lg font-mono md:text-2xl text-muted-foreground text-center max-w-xl mb-12 font-medium tracking-tight leading-relaxed"
         >
           {t('subtitle')}
         </motion.p>
