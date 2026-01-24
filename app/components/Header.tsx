@@ -21,6 +21,7 @@ interface HeaderProps {
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
   transparent?: boolean;
+  fullWidth?: boolean;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -32,6 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
   signIn,
   signOut,
   transparent = false,
+  fullWidth = false,
 }) => {
   const t = useTranslations('Header');
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -82,7 +84,7 @@ export const Header: React.FC<HeaderProps> = ({
           : "bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800"
       }`}
     >
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <div className={`${fullWidth ? "w-full px-6" : "container mx-auto px-4"} h-16 flex items-center justify-between gap-4`}>
         {/* 左侧 Logo 和 标题 */}
         <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
           <Image src="/icon.svg" alt="App Icon" width={28} height={28} />
