@@ -7,13 +7,6 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { queryEmbedding, queryTexts, limit, filters } = body;
     
-    // if (!queryEmbedding || !Array.isArray(queryEmbedding)) {
-    //   return NextResponse.json(
-    //     { success: false, error: 'Missing or invalid queryEmbedding parameter' },
-    //     { status: 400 }
-    //   );
-    // }
-    
     // 使用全局集合实例
     const collection = new ChromaCollection();
 
