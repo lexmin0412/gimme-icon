@@ -448,6 +448,12 @@ const ConsolePage: React.FC = () => {
                     placeholder={tConsole("searchInLibrary", {
                       library: activeLibrary || tConsole("defaultLibrary"),
                     })}
+                    filters={{ 
+                      libraries: activeLibrary ? [activeLibrary] : [],
+                      categories: [],
+                      tags: []
+                    }}
+                    hideFilter={true}
                   />
                 </div>
                 <div className="flex items-center space-x-2">
@@ -552,11 +558,12 @@ const ConsolePage: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-background">
       <Header
-        showSearchBar={true}
+        showSearchBar={false}
         onSearch={handleGlobalSearch}
         user={user}
         signIn={handleSignIn}
         signOut={handleSignOut}
+        fullWidth={true}
       />
       {renderContent()}
     </div>
