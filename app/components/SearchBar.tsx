@@ -27,6 +27,7 @@ interface SearchBarProps {
   inputClassName?: string;
   autoFocus?: boolean;
   filters?: FilterOptions;
+  hideFilter?: boolean;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ 
@@ -39,7 +40,8 @@ const SearchBar: React.FC<SearchBarProps> = ({
   className,
   inputClassName,
   autoFocus,
-  filters
+  filters,
+  hideFilter = false
 }) => {
   const tLanding = useTranslations('Landing');
   const [query, setQuery] = useState(defaultValue);
@@ -128,58 +130,60 @@ const SearchBar: React.FC<SearchBarProps> = ({
             placeholder={displayPlaceholder}
             value={query}
             onChange={handleInputChange}
-            className={cn("pl-9 pr-10 [&::-webkit-search-cancel-button]:hidden", inputClassName)}
+            className={cn("pl-9 pr-10 [&::-webkit-search-cancel-button]:hidden", inputClassName, hideFilter && "pr-3")}
             disabled={disabled}
             autoFocus={autoFocus}
           />
         )}
         
-        <div className={cn("absolute right-2", multiline ? "top-3" : "top-1/2 -translate-y-1/2")}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8 text-muted-foreground hover:text-foreground relative"
-                type="button"
-              >
-                <Filter className="h-4 w-4" />
-                {selectedLibraries.length > 0 && (
-                  <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
-                )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 max-h-80 overflow-y-auto">
-              <DropdownMenuLabel>Filter by Library</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {sortedLibraries.map((lib) => (
-                <DropdownMenuItem
-                  key={lib.prefix}
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    setSelectedLibraries(prev => {
-                      const isSelected = prev.includes(lib.prefix);
-                      return isSelected 
-                        ? prev.filter(p => p !== lib.prefix)
-                        : [...prev, lib.prefix];
-                    });
-                  }}
-                  className="flex items-center justify-between gap-2 cursor-pointer"
+        {!hideFilter && (
+          <div className={cn("absolute right-2", multiline ? "top-3" : "top-1/2 -translate-y-1/2")}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground relative"
+                  type="button"
                 >
-                  <span className="truncate flex-1">{lib.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground tabular-nums">
-                      {lib.total}
-                    </span>
-                    {selectedLibraries.includes(lib.prefix) && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </div>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+                  <Filter className="h-4 w-4" />
+                  {selectedLibraries.length > 0 && (
+                    <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 max-h-80 overflow-y-auto">
+                <DropdownMenuLabel>Filter by Library</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {sortedLibraries.map((lib) => (
+                  <DropdownMenuItem
+                    key={lib.prefix}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setSelectedLibraries(prev => {
+                        const isSelected = prev.includes(lib.prefix);
+                        return isSelected 
+                          ? prev.filter(p => p !== lib.prefix)
+                          : [...prev, lib.prefix];
+                      });
+                    }}
+                    className="flex items-center justify-between gap-2 cursor-pointer"
+                  >
+                    <span className="truncate flex-1">{lib.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {lib.total}
+                      </span>
+                      {selectedLibraries.includes(lib.prefix) && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </div>
       {showButton && !multiline && (
         <Button type="submit" disabled={disabled}>
