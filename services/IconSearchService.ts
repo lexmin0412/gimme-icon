@@ -267,7 +267,7 @@ class IconSearchService {
 
   async searchIcons(
     query: string,
-    _filters: FilterOptions,
+    filters: FilterOptions,
     limit: number = INITIAL_LOAD_COUNT
   ): Promise<SearchResult[]> {
     if (!this.initialized) {
@@ -281,6 +281,17 @@ class IconSearchService {
     try {
       const queryEmbedding = await embeddingService.generateEmbedding(query);
 
+      // 构建 ChromaDB 过滤器
+      const chromaFilters: Record<string, unknown> = {};
+      
+      // 处理 library 过滤
+      if (filters?.libraries?.length > 0) {
+        chromaFilters["library"] = { "$in": filters.libraries };
+      }
+
+      // 暂时只处理 library，后续可以扩展 categories 和 tags
+      // if (filters?.categories?.length > 0) { ... }
+
       const response = await fetch("/api/chroma/search", {
         method: "POST",
         headers: {
@@ -289,7 +300,7 @@ class IconSearchService {
         body: JSON.stringify({
           queryEmbedding,
           limit: limit,
-          filters: {},
+          filters: Object.keys(chromaFilters).length > 0 ? chromaFilters : {},
         }),
       });
 

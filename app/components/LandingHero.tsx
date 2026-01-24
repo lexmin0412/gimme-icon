@@ -6,6 +6,7 @@ import { Cabin_Sketch } from "next/font/google";
 import SearchBar from "./SearchBar";
 import { cn } from "@/libs/utils";
 import { useTranslations } from "next-intl";
+import { FilterOptions } from "@/types/icon";
 
 const cabinSketch = Cabin_Sketch({ 
   subsets: ["latin"],
@@ -13,7 +14,7 @@ const cabinSketch = Cabin_Sketch({
 });
 
 interface LandingHeroProps {
-  onSearch: (query: string) => void;
+  onSearch: (query: string, filters?: FilterOptions) => void;
   isAppLoading: boolean;
 }
 

@@ -9,6 +9,10 @@ import { LandingHero } from "../components/LandingHero";
 import { Header } from "../components/Header";
 import { useTranslations } from "next-intl";
 
+import { FilterOptions } from "@/types/icon";
+
+// ...
+
 // Create a component using SearchContext
 const HomeContent: React.FC<{ isAppLoading: boolean }> = ({ isAppLoading }) => {
   const router = useRouter();
@@ -21,14 +25,20 @@ const HomeContent: React.FC<{ isAppLoading: boolean }> = ({ isAppLoading }) => {
   const tCommon = useTranslations("Common");
 
   // Handle search query - navigate to search page
-  const handleSearch = (query: string) => {
+  const handleSearch = (query: string, filters?: FilterOptions) => {
     if (isAppLoading) return;
     if (!query.trim()) {
       showToast(tSearch("enterKeyword"), "error");
       return;
     }
     
-    router.push(`/search?q=${encodeURIComponent(query)}`);
+    const params = new URLSearchParams();
+    params.set("q", query);
+    if (filters?.libraries?.length) {
+      params.set("libraries", filters.libraries.join(","));
+    }
+    
+    router.push(`/search?${params.toString()}`);
   };
 
   // Auth handlers

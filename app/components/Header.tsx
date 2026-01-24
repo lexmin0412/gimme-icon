@@ -10,11 +10,13 @@ import SearchBar from "./SearchBar";
 import { ModeToggle } from "./ModeToggle";
 import { LanguageSwitcher } from "./LanguageSwitcher";
 import { useTranslations } from "next-intl";
+import { FilterOptions } from "@/types/icon";
 
 interface HeaderProps {
   showSearchBar: boolean;
-  onSearch: (query: string) => void;
+  onSearch: (query: string, filters?: FilterOptions) => void;
   query?: string;
+  filters?: FilterOptions;
   user: { name?: string; image?: string | null } | null;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -25,6 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   showSearchBar,
   onSearch,
   query,
+  filters,
   user,
   signIn,
   signOut,
@@ -91,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* 中间搜索框 - 仅在 showSearchBar 为 true 时显示 */}
         <div className="flex-1 max-w-2xl">
           {showSearchBar && (
-            <SearchBar onSearch={onSearch} defaultValue={query} />
+            <SearchBar onSearch={onSearch} defaultValue={query} filters={filters} />
           )}
         </div>
 

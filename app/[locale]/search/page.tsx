@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useContext, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "@/i18n/routing";
 import { useSearchParams } from "next/navigation";
 import { authClient, signIn, signOut } from "@/libs/auth-client";
@@ -7,84 +7,97 @@ import IconGrid from "@/app/components/IconGrid";
 import IconDetail from "@/app/components/IconDetail";
 import { Header } from "@/app/components/Header";
 import { iconSearchService } from "@/services/IconSearchService";
-import type { SearchResult } from "@/types/icon";
-import { SearchProvider, SearchContext } from "@/context/SearchContext";
+import type { SearchResult, Icon } from "@/types/icon";
 import { embeddingService } from "@/services/embedding";
 import { useToast } from "@/app/components/ToastProvider";
 import { useTranslations } from "next-intl";
+import { FilterOptions } from "@/types/icon";
 
 const SearchContent: React.FC = () => {
   const t = useTranslations("Search");
   const tCommon = useTranslations("Common");
-  const context = useContext(SearchContext);
   const searchParams = useSearchParams();
   const router = useRouter();
+  
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedIcon, setSelectedIcon] = useState<Icon | null>(null);
+  
   const [user, setUser] = useState<{
     name?: string;
     image?: string | null;
   } | null>(null);
   const { showToast } = useToast();
+  const lastSearchParamsRef = React.useRef<string>("");
 
   // Perform actual search
-  const performSearch = useCallback(async (query: string) => {
-    if (!context) return;
-    
-    context.setQuery(query);
+  const performSearch = useCallback(async (query: string, filters: FilterOptions) => {
     try {
       setIsLoading(true);
       const results = await iconSearchService.searchIcons(
         query,
-        context.filters || { libraries: [], categories: [], tags: [] }
+        filters
       );
-      context.setResults(results);
+      setResults(results);
     } catch (error) {
       console.error("Search failed:", error);
       showToast(t("searchFailed"), "error");
     } finally {
       setIsLoading(false);
     }
-  }, [context?.filters, context?.setQuery, context?.setResults, showToast]);
+  }, [showToast, t]);
 
   // Initial search from URL and listen to URL changes
   useEffect(() => {
     const query = searchParams.get("q");
-    if (query) {
-      performSearch(query);
+    const libraries = searchParams.get("libraries")?.split(",").filter(Boolean) || [];
+    
+    // Create a stable string representation of the current search params we care about
+    const currentParamsString = new URLSearchParams({
+        q: query || "",
+        libraries: libraries.sort().join(",")
+    }).toString();
+
+    // Only search if query exists and params have changed since last search
+    if (query && currentParamsString !== lastSearchParamsRef.current) {
+      lastSearchParamsRef.current = currentParamsString;
+      performSearch(query, { libraries, categories: [], tags: [] });
     }
   }, [searchParams, performSearch]);
 
-  // Handle search query (UI interaction)
-  const handleSearch = (query: string) => {
+  // Handle search query (UI interaction) -> URL update
+  const handleSearch = (query: string, filters?: FilterOptions) => {
     if (!query.trim()) {
       showToast(t("enterKeyword"), "error");
       return;
     }
     
-    const currentQuery = searchParams.get("q");
-    if (currentQuery !== query) {
-      const newParams = new URLSearchParams(searchParams.toString());
-      newParams.set("q", query);
-      router.push(`/search?${newParams.toString()}`);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("q", query);
+    if (filters?.libraries?.length) {
+      params.set("libraries", filters.libraries.join(","));
     } else {
-      // Force refresh if query is same
-      performSearch(query);
+      params.delete("libraries");
+    }
+    
+    const newSearchString = params.toString();
+    if (searchParams.toString() !== newSearchString) {
+      router.push(`/search?${newSearchString}`);
+    } else {
+      // Force refresh if query/params are same but user explicitly hit search
+      // We can reset the ref to force a re-run in useEffect or call performSearch directly
+      // Calling directly is simpler
+      performSearch(query, filters || { libraries: [], categories: [], tags: [] });
     }
   };
 
-  // Handle icon click
-  const handleIconClick = (result: SearchResult) => {
-    context?.setSelectedIcon(result.icon);
-  };
-
-  // Close icon preview
-  const handleClosePreview = () => {
-    context?.setSelectedIcon(null);
-  };
-
-  // Auth handlers
   const handleSignIn = async () => {
-    await signIn();
+    try {
+      await signIn();
+    } catch (error) {
+      console.error("Sign in failed:", error);
+      showToast(tCommon("signInFailed"), "error");
+    }
   };
 
   const handleSignOut = async () => {
@@ -115,22 +128,16 @@ const SearchContent: React.FC = () => {
     checkSession();
   }, []);
 
-  if (!context) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">{t("contextUnavailable")}</p>
-      </div>
-    );
-  }
-
-  const isSelected = !!context.selectedIcon;
+  const isSelected = !!selectedIcon;
+  const libraries = searchParams.get("libraries")?.split(",").filter(Boolean) || [];
 
   return (
     <div className="h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden flex flex-col">
       <Header
         showSearchBar={true}
         onSearch={handleSearch}
-        query={context?.query || searchParams.get("q") || ""}
+        query={searchParams.get("q") || ""}
+        filters={{ libraries, categories: [], tags: [] }}
         user={user}
         signIn={handleSignIn}
         signOut={handleSignOut}
@@ -143,36 +150,35 @@ const SearchContent: React.FC = () => {
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
             <p className="text-muted-foreground">{t('loading')}</p>
           </div>
-        ) : context?.results && context.results.length > 0 ? (
+        ) : results.length > 0 ? (
           <div className="flex-1 overflow-hidden h-full">
             <div className="container mx-auto h-full py-4">
               <div
                 className={`flex flex-col lg:flex-row h-full transition-all duration-300 ${
-                  context.selectedIcon ? "gap-4" : "gap-8"
+                  selectedIcon ? "gap-4" : "gap-8"
                 }`}
               >
                 {/* Left Grid Area */}
                 <div
                   className={`transition-all duration-300 ease-in-out overflow-y-auto ${
-                    context.selectedIcon
+                    selectedIcon
                       ? "lg:w-7/12 w-full h-1/2 lg:h-full"
                       : "w-full h-full"
                   }`}
                 >
                   <IconGrid
-                    results={context.results}
-                    onIconClick={handleIconClick}
-                    isCompact={!!context.selectedIcon}
-                    loading={isLoading}
+                    results={results}
+                    onIconClick={(result) => setSelectedIcon(result.icon)}
+                    isCompact={!!selectedIcon}
                   />
                 </div>
 
                 {/* Right Detail Area */}
-                {context.selectedIcon && (
+                {selectedIcon && (
                   <div className="lg:w-5/12 w-full h-1/2 lg:h-full overflow-y-auto bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
                     <IconDetail
-                      icon={context.selectedIcon}
-                      onClose={handleClosePreview}
+                      icon={selectedIcon}
+                      onClose={() => setSelectedIcon(null)}
                       showCloseButton={true}
                     />
                   </div>
@@ -181,8 +187,12 @@ const SearchContent: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="text-center py-20">
-            <p className="text-xl text-muted-foreground">{t('noResults')}</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="text-6xl mb-4">🔍</div>
+            <h2 className="text-2xl font-semibold mb-2">{t('noResults')}</h2>
+            <p className="text-muted-foreground max-w-md">
+              {t('tryAdjustingKeywords')}
+            </p>
           </div>
         )}
       </main>
@@ -192,8 +202,7 @@ const SearchContent: React.FC = () => {
 
 const SearchPage: React.FC = () => {
   const t = useTranslations("Search");
-  // Initialize services if needed (might be redundant if already initialized in layout or root, 
-  // but good to ensure availability)
+  // Initialize services if needed
   useEffect(() => {
     const init = async () => {
       try {
@@ -208,17 +217,15 @@ const SearchPage: React.FC = () => {
   }, []);
 
   return (
-    <SearchProvider>
-      <React.Suspense
-        fallback={
-          <div className="flex h-screen items-center justify-center text-muted-foreground">
-            {t("loading")}
-          </div>
-        }
-      >
-        <SearchContent />
-      </React.Suspense>
-    </SearchProvider>
+    <React.Suspense
+      fallback={
+        <div className="flex h-screen items-center justify-center text-muted-foreground">
+          {t("loading")}
+        </div>
+      }
+    >
+      <SearchContent />
+    </React.Suspense>
   );
 };
 
