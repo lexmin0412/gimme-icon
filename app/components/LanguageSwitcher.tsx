@@ -5,6 +5,7 @@ import { Languages } from "lucide-react";
 import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,13 +16,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function LanguageSwitcher() {
-  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const t = useTranslations("LanguageSwitcher");
 
   const handleLocaleChange = (newLocale: "en" | "zh") => {
-    router.replace(pathname, { locale: newLocale });
+    const params = searchParams.toString();
+    const query = params ? `?${params}` : "";
+    router.replace(`${pathname}${query}`, { locale: newLocale });
   };
 
   return (
