@@ -34,7 +34,8 @@
     "contextUnavailable": "Search context is not available",
     "loadingMoreIcons": "Loading more icons...",
     "scrollToLoadMoreIcons": "Scroll down to load more icons ({visible}/{total})",
-    "allIconsLoaded": "All {count} icons loaded"
+    "allIconsLoaded": "All {count} icons loaded",
+    "tryAdjustingKeywords": "Please try adjusting keywords or filters"
   },
   "Settings": {
     "title": "Settings",

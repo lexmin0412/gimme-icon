@@ -34,7 +34,8 @@
     "contextUnavailable": "搜索上下文不可用",
     "loadingMoreIcons": "正在加载更多图标...",
     "scrollToLoadMoreIcons": "下拉加载更多图标（{visible}/{total}）",
-    "allIconsLoaded": "已加载全部 {count} 个图标"
+    "allIconsLoaded": "已加载全部 {count} 个图标",
+    "tryAdjustingKeywords": "请尝试调整关键词或筛选条件"
   },
   "Settings": {
     "title": "设置",
