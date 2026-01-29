@@ -89,6 +89,21 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
     },
   };
 
+  const subtitleVariants: Variants = {
+    hidden: { opacity: 0, y: 20, filter: "blur(8px)" },
+    show: { 
+      opacity: 1, 
+      y: 0,
+      filter: "blur(0px)",
+      transition: {
+        type: "spring",
+        stiffness: 40,
+        damping: 20,
+        delay: 0.2
+      }
+    },
+  };
+
   const titleVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     show: { 
@@ -165,8 +180,8 @@ export const LandingHero: React.FC<LandingHeroProps> = ({
 
         {/* Subtitle */}
         <motion.p
-          variants={itemVariants}
-          className="text-lg font-mono md:text-2xl text-muted-foreground text-center max-w-xl mb-12 font-medium tracking-tight leading-relaxed"
+          variants={subtitleVariants}
+          className="text-sm md:text-xl font-mono text-muted-foreground/70 text-center max-w-2xl mb-12 tracking-wider leading-relaxed"
         >
           {t('subtitle')}
         </motion.p>
